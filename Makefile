@@ -1,10 +1,10 @@
 CXX       := g++
-CXX_FLAGS := -std=c++20
+CXX_FLAGS := 
 
-BIN     := bin
-SRC     := src
-INCLUDE := include
-LIB     := lib
+BIN         := bin
+SRC         := src
+INCLUDE     := include
+LIBS        := 
 LIBRARIES   := 
 EXECUTABLE  := build
 
@@ -12,14 +12,14 @@ EXECUTABLE  := build
 all: $(BIN)/$(EXECUTABLE)
 
 run: clean all
-    clear
-    @echo "🚀 Executing..."
-    ./$(BIN)/$(EXECUTABLE)
+	clear
+	@echo "🚀 Executing..."
+	./$(BIN)/$(EXECUTABLE)
 
 $(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
-    @echo "🚧 Building..."
-    $(CXX) $(CXX_FLAGS) -I$(INCLUDE) -L$(LIB) $^ -o $@ $(LIBRARIES)
+	@echo "🚧 Building..."
+	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) $(LIBS) $^ -o $@ $(LIBRARIES)
 
 clean:
-    @echo "🧹 Clearing..."
-    -rm $(BIN)/*
+	@echo "🧹 Clearing..."
+	-rm $(BIN)/*
