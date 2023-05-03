@@ -2,7 +2,7 @@
 #include "libattopng.hpp"
 #include <iostream>
 
-#define TRAINING 1
+#define TRAINING 0
 
 int main() {
     #if TRAINING
@@ -26,7 +26,7 @@ int main() {
         }
         std::string s = std::to_string(amount+1);
         s = "images/" + s + ".png";
-        //libattopng_save(png, s.c_str());
+        libattopng_save(png, s.c_str());
         libattopng_destroy(png);
     }
 

@@ -9,14 +9,14 @@ LIBRARIES   :=
 EXECUTABLE  := build
 
 
-all: $(BIN)/$(EXECUTABLE)
+all: $(EXECUTABLE)
 
 run: clean all
-	clear
+	cls
 	@echo "🚀 Executing..."
 	./$(BIN)/$(EXECUTABLE)
 
-$(BIN)/$(EXECUTABLE): $(SRC)/*.cpp
+$(EXECUTABLE): $(SRC)/*.cpp
 	@echo "🚧 Building..."
 	$(CXX) $(CXX_FLAGS) -I$(INCLUDE) $(LIBS) $^ -o $@ $(LIBRARIES)
 
