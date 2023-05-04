@@ -1,6 +1,6 @@
 #include "Neuron.hpp"
 
-Neuron::Neuron(float value = 0) {
+Neuron::Neuron(float value) {
     setValue(value);
 }
 

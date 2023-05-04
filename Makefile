@@ -14,7 +14,7 @@ all: $(EXECUTABLE)
 run: clean all
 	cls
 	@echo "🚀 Executing..."
-	./$(BIN)/$(EXECUTABLE)
+	./$(EXECUTABLE)
 
 $(EXECUTABLE): $(SRC)/*.cpp
 	@echo "🚧 Building..."
