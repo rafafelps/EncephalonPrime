@@ -2,13 +2,10 @@
 #include "libattopng.hpp"
 #include <iostream>
 
-#define TRAINING 1
-
 int main(int argc, char* argv[]) {
     Dataset data;
     if (argc == 2) {
         if (!atoi(argv[1])) {
-            std::cout << "Here!" << std::endl;
             data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
         } else {
             data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
@@ -22,8 +19,6 @@ int main(int argc, char* argv[]) {
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
-
-    std::cout << size << std::endl;
     
     for (int amount = 0; amount < size; amount++) {
         libattopng_t* png = libattopng_new(28, 28, PNG_GRAYSCALE);
@@ -35,9 +30,9 @@ int main(int argc, char* argv[]) {
         }
         std::string s = std::to_string(amount+1);
         s = "images/" + s + ".png";
-        //libattopng_save(png, s.c_str());
+        libattopng_save(png, s.c_str());
         libattopng_destroy(png);
+        //std::cerr << "\rRemaining: " << size - amount - 1 << std::flush;
     }
-
     return 0;
 }
