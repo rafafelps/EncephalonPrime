@@ -6,10 +6,10 @@ size(neuronAmount) {
 
     if (!prevLayer) { weigth = nullptr; bias = nullptr; }
     else {
-        weigth = new float*[prevLayer->getSize()];
-        int weightRows = prevLayer->getSize();
-        for (int i = 0; i < weightRows; i++) {
-            weigth[i] = new float[this->getSize()];
+        weigth = new float*[neuronAmount];
+        int weightColumns = prevLayer->getSize();
+        for (int i = 0; i < neuronAmount; i++) {
+            weigth[i] = new float[weightColumns];
         }
         bias = new float[this->getSize()];
     }

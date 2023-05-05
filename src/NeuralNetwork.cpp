@@ -165,7 +165,6 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
         }
         currLayer--;
     }
-    std::cout << gradientCounter << std::endl;
     gradientList->push_back(gradientVec);
 }
 
