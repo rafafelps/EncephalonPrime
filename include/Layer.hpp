@@ -9,7 +9,6 @@ private:
     const unsigned int size;
 public:
     Layer(unsigned int neuronAmount, Layer* prevLayer);
-    Layer();
     ~Layer();
 
     unsigned int getSize() const;

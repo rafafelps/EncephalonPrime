@@ -72,11 +72,21 @@ void NeuralNetwork::propagate(unsigned char* inputData) {
         total += activationValue[currNeuron];
     }
 
+    if (!total) { exit(10101010); }
+
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         this->layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue[currNeuron] / total);
     }
 }
 
-void NeuralNetwork::backPropagate(float* correctData) {
-    
+void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
+
+}
+
+void NeuralNetwork::updateWeightsAndBiases(float* negativeGradientVec) {
+
+}
+
+std::vector<Layer*> NeuralNetwork::getLayers() {
+    return this->layers;
 }

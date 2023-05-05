@@ -1,4 +1,5 @@
 #include "Dataset.hpp"
+#include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
 #include <iostream>
 
@@ -14,25 +15,33 @@ int main(int argc, char* argv[]) {
         std::cout << "Usage: .\\build.exe [0|1] (0: training; 1: test)" << std::endl;
         exit(69420);
     }
+
+    unsigned int sizes[4] = {784, 16, 16, 10};
+    NeuralNetwork mnist(4, sizes);
+    mnist.setDataset(&data);
     
-    unsigned char img[28][28] = {0};
+    unsigned char inputData[784] = {0};
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
     
-    for (int amount = 0; amount < size; amount++) {
-        libattopng_t* png = libattopng_new(28, 28, PNG_GRAYSCALE);
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                data.getImages()->read((char *)(&img[i][j]), sizeof(unsigned char));
-                libattopng_set_pixel(png, j, i, img[i][j]);
-            }
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            data.getImages()->read((char *)(&inputData[i * width + j]), sizeof(unsigned char));
         }
-        std::string s = std::to_string(amount+1);
-        s = "images/" + s + ".png";
-        libattopng_save(png, s.c_str());
-        libattopng_destroy(png);
-        //std::cerr << "\rRemaining: " << size - amount - 1 << std::flush;
     }
+
+    float fInputData[784] = {0};
+    for (int i = 0; i < 784; i++) {
+        fInputData[i] = inputData[i] / 255;
+    }
+    mnist.propagate(fInputData);
+    std::vector<Layer*> layers = mnist.getLayers();
+    
+    unsigned int lSize = layers[3]->getSize();
+    for (int i = 0; i < lSize; i++) {
+        std::cout << layers[3]->getNeuron(i)->getValue() << std::endl;
+    }
+    
     return 0;
 }
