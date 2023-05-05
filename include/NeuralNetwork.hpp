@@ -13,13 +13,14 @@ public:
     NeuralNetwork(unsigned char layerAmount, unsigned int* sizes);
     ~NeuralNetwork();
 
+    float* getResults() const;
     void setDataset(Dataset* dataset);
-    std::vector<Layer*> getLayers();
 
     float ReLU(float val);
     float dReLU(float val);
 
     void propagate(float* inputData);
-    void backPropagate(float* correctData, float* gradientVec);
+    void backPropagate(float* correctData, std::vector<float*>* gradientList);
+    void randomizeWeightsAndBiases();
     void updateWeightsAndBiases(float* negativeGradientVec);
 };

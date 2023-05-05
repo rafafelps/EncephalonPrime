@@ -15,4 +15,7 @@ public:
     Neuron* getNeuron(unsigned int index) const;
     float getWeight(unsigned int prevNeuron, unsigned int currNeuron) const;
     float getBias(unsigned int index) const;
+
+    void setWeight(float val, unsigned int prevNeuron, unsigned int currNeuron);
+    void setBias(float val, unsigned int index);
 };

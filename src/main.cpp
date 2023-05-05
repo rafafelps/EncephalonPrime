@@ -35,12 +35,13 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 784; i++) {
         fInputData[i] = inputData[i] / 255;
     }
-    mnist.propagate(fInputData);
-    std::vector<Layer*> layers = mnist.getLayers();
     
-    unsigned int lSize = layers[3]->getSize();
-    for (int i = 0; i < lSize; i++) {
-        std::cout << layers[3]->getNeuron(i)->getValue() << std::endl;
+    mnist.randomizeWeightsAndBiases();
+    mnist.propagate(fInputData);
+    float* lastLayer = mnist.getResults();
+
+    for (int i = 0; i < 10; i++) {
+        std::cout << lastLayer[i] << std::endl;
     }
     
     return 0;
