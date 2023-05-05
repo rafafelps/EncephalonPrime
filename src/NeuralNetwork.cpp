@@ -1,6 +1,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <queue>
+#include <iostream>
 #include "NeuralNetwork.hpp"
 
 NeuralNetwork::NeuralNetwork(const char* path) {
@@ -30,7 +32,6 @@ float* NeuralNetwork::getResults() const {
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         endVec[currNeuron] = this->layers[amountLayers - 1]->getNeuron(currNeuron)->getValue();
     }
-
     return endVec;
 }
 
@@ -123,34 +124,53 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
     unsigned int layerSize = this->layers[currLayer]->getSize();
     unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
     unsigned int gradientCounter = 0;
-    for (int currNeuron = 0; currLayer < layerSize; currLayer++) {
+    std::queue<float> deltas;
+    for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         float dCdA = 2 *
                      (this->layers[currLayer]->getNeuron(currNeuron)->getValue()
                      - correctData[currNeuron]);
+        deltas.push(dCdA);
         float dRelu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
             gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() *
-                          dRelu * dCdA;
+                                             dRelu * dCdA;
         }
+        gradientVec[gradientCounter++] = dCdA * dRelu;
         // Add dCdA * dRelu to bias vec and add it later to gradientVec
     }
 
+    currLayer--;
     while (currLayer > 0) {
         layerSize = this->layers[currLayer]->getSize();
         prevLayerSize = this->layers[currLayer-1]->getSize();
-        for (int currNeuron = 0; currLayer < layerSize; currLayer++) {
+        for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
+            float dCdA = 0;
+            float dRelu = 0;
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                float dCdA = 2 * (this->layers[currLayer]->getNeuron(currNeuron)->getValue()
-                                  - correctData[currNeuron]);
-            }
-        }
+                unsigned int nextLayerSize = this->layers[currLayer+1]->getSize();
 
+                for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
+                    dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) *
+                            dReLU(this->layers[currLayer+1]->getNeuron(nextNeuron)->getValue()) *
+                            deltas.front();
+                    deltas.pop();
+                }
+                deltas.push(dCdA);
+                dRelu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+
+                gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() *
+                                                 dRelu * dCdA;
+            }
+            gradientVec[gradientCounter++] = dCdA * dRelu;
+        }
         currLayer--;
     }
+    std::cout << gradientCounter << std::endl;
+    gradientList->push_back(gradientVec);
 }
 
 void NeuralNetwork::randomizeWeightsAndBiases() {
-    srand(time(NULL));
+    //srand(time(NULL));
 
     unsigned char currLayer = 1;
     unsigned char amountLayer = this->layers.size();
