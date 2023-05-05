@@ -16,33 +16,30 @@ int main(int argc, char* argv[]) {
         exit(69420);
     }
 
-    unsigned int sizes[4] = {784, 16, 16, 10};
-    NeuralNetwork mnist(4, sizes);
+    unsigned int sizes[3] = {3, 4, 2};
+    NeuralNetwork mnist(3, sizes);
     mnist.setDataset(&data);
     
-    unsigned char inputData[784] = {0};
+    unsigned char inputData[4] = {0};
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
-    
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            data.getImages()->read((char *)(&inputData[i * width + j]), sizeof(unsigned char));
-        }
-    }
 
-    float fInputData[784] = {0};
-    for (int i = 0; i < 784; i++) {
-        fInputData[i] = inputData[i] / 255;
+    float fInputData[3] = {0};
+    for (int i = 0; i < 3; i++) {
+        fInputData[i] = 0;
     }
     
     mnist.randomizeWeightsAndBiases();
     mnist.propagate(fInputData);
     float* lastLayer = mnist.getResults();
 
-    for (int i = 0; i < 10; i++) {
-        std::cout << lastLayer[i] << std::endl;
-    }
+    std::vector<Layer*> layers = mnist.getLayers();
+
+    std::cout << layers[1]->getNeuron(0)->getValue() * layers[2]->getWeight(0,0) + layers[1]->getNeuron(1)->getValue() * layers[2]->getWeight(1,0) + layers[2]->getBias(0) << std::endl;
+    std::cout << layers[1]->getNeuron(0)->getValue() * layers[2]->getWeight(0,1) + layers[1]->getNeuron(1)->getValue() * layers[2]->getWeight(1,1) + layers[2]->getBias(1) << std::endl;
+    std::cout << lastLayer[0] << std::endl;
+    std::cout << lastLayer[1] << std::endl;
     
     return 0;
 }

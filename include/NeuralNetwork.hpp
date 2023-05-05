@@ -14,10 +14,12 @@ public:
     ~NeuralNetwork();
 
     float* getResults() const;
+    std::vector<Layer*> getLayers() const;
     void setDataset(Dataset* dataset);
 
     float ReLU(float val);
     float dReLU(float val);
+    void softmax(float* results);
 
     void propagate(float* inputData);
     void backPropagate(float* correctData, std::vector<float*>* gradientList);

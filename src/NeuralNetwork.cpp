@@ -1,6 +1,10 @@
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
+#include <iostream>
 #include "NeuralNetwork.hpp"
+
+#define euler 2.718281828459045
 
 NeuralNetwork::NeuralNetwork(const char* path) {
 
@@ -45,6 +49,21 @@ float NeuralNetwork::dReLU(float val) {
     return (val > 0) ? 1 : 0;
 }
 
+void NeuralNetwork::softmax(float* results) {
+    unsigned char amountLayers = this->layers.size();
+    unsigned int layerSize = this->layers[amountLayers-1]->getSize();
+
+    float total = 0;
+    for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
+        results[currNeuron] = expf(results[currNeuron]);
+        total += results[currNeuron];
+    }
+
+    for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
+        results[currNeuron] = results[currNeuron] / total;
+    }
+}
+
 void NeuralNetwork::propagate(float* inputData) {
     unsigned char currLayer = 0;
     unsigned char amountLayers = layers.size() - 1;
@@ -76,20 +95,18 @@ void NeuralNetwork::propagate(float* inputData) {
     layerSize = this->layers[currLayer]->getSize();
     int prevLayerSize = this->layers[currLayer-1]->getSize();
     float activationValue[layerSize] = {0};
-    float total = 0;
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
             activationValue[currNeuron] += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
             this->layers[currLayer]->getWeight(prevNeuron, currNeuron);
         }
         activationValue[currNeuron] += this->layers[currLayer]->getBias(currNeuron);
-        total += activationValue[currNeuron];
     }
 
-    if (!total) { exit(10101010); }
+    softmax(activationValue);
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        this->layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue[currNeuron] / total);
+        this->layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue[currNeuron]);
     }
 }
 
@@ -109,10 +126,10 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+                float r = -1.573 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.443+1.573)));
                 this->layers[currLayer]->setWeight(r, prevNeuron, currNeuron);
             }
-            float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+            float r = -1.573 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.443+1.573)));
             this->layers[currLayer]->setBias(r, currNeuron);
         }
 
@@ -122,4 +139,8 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
 
 void NeuralNetwork::updateWeightsAndBiases(float* negativeGradientVec) {
 
+}
+
+std::vector<Layer*> NeuralNetwork::getLayers() const {
+    return this->layers;
 }
