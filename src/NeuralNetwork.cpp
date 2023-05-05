@@ -1,10 +1,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-#include <iostream>
 #include "NeuralNetwork.hpp"
-
-#define euler 2.718281828459045
 
 NeuralNetwork::NeuralNetwork(const char* path) {
 
@@ -126,10 +123,10 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                float r = -1.573 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.443+1.573)));
+                float r = -1.573 + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (1.443 + 1.573)));
                 this->layers[currLayer]->setWeight(r, prevNeuron, currNeuron);
             }
-            float r = -1.573 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1.443+1.573)));
+            float r = -1.573 + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (1.443 + 1.573)));
             this->layers[currLayer]->setBias(r, currNeuron);
         }
 
