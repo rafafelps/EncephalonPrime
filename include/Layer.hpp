@@ -14,6 +14,6 @@ public:
 
     unsigned int getSize() const;
     Neuron* getNeuron(unsigned int index) const;
-    float getWeight(unsigned int prevNeuron, unsigned int curNeuron) const;
+    float getWeight(unsigned int prevNeuron, unsigned int currNeuron) const;
     float getBias(unsigned int index) const;
 };

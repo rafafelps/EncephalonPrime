@@ -37,8 +37,8 @@ Neuron* Layer::getNeuron(unsigned int index) const {
     return &this->neuron[index];
 }
 
-float Layer::getWeight(unsigned int prevNeuron, unsigned int curNeuron) const {
-    return this->weigth[prevNeuron][curNeuron];
+float Layer::getWeight(unsigned int prevNeuron, unsigned int currNeuron) const {
+    return this->weigth[prevNeuron][currNeuron];
 }
 
 float Layer::getBias(unsigned int index) const {

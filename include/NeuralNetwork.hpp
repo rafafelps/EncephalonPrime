@@ -14,4 +14,10 @@ public:
     ~NeuralNetwork();
 
     void setDataset(Dataset* dataset);
+
+    float ReLU(float val);
+    float dReLU(float val);
+
+    void propagate(unsigned char* inputData);
+    void backPropagate(float* correctData);
 };
