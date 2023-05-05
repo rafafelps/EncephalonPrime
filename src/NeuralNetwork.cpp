@@ -108,7 +108,45 @@ void NeuralNetwork::propagate(float* inputData) {
 }
 
 void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradientList) {
+    unsigned int gradientSize = 0;
+    unsigned char amountLayers = this->layers.size();
 
+    for (int currLayer = 1; currLayer < amountLayers; currLayer++) {
+        gradientSize += this->layers[currLayer-1]->getSize() *
+                        this->layers[currLayer]->getSize() +
+                        this->layers[currLayer]->getSize();
+    }
+
+    float* gradientVec = new float(gradientSize);
+
+    unsigned char currLayer = amountLayers - 1;
+    unsigned int layerSize = this->layers[currLayer]->getSize();
+    unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+    unsigned int gradientCounter = 0;
+    for (int currNeuron = 0; currLayer < layerSize; currLayer++) {
+        float dCdA = 2 *
+                     (this->layers[currLayer]->getNeuron(currNeuron)->getValue()
+                     - correctData[currNeuron]);
+        float dRelu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+        for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+            gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() *
+                          dRelu * dCdA;
+        }
+        // Add dCdA * dRelu to bias vec and add it later to gradientVec
+    }
+
+    while (currLayer > 0) {
+        layerSize = this->layers[currLayer]->getSize();
+        prevLayerSize = this->layers[currLayer-1]->getSize();
+        for (int currNeuron = 0; currLayer < layerSize; currLayer++) {
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                float dCdA = 2 * (this->layers[currLayer]->getNeuron(currNeuron)->getValue()
+                                  - correctData[currNeuron]);
+            }
+        }
+
+        currLayer--;
+    }
 }
 
 void NeuralNetwork::randomizeWeightsAndBiases() {
