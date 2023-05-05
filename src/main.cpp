@@ -2,6 +2,7 @@
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
 #include <iostream>
+#include <iomanip>
 
 int main(int argc, char* argv[]) {
     Dataset data;
@@ -16,30 +17,32 @@ int main(int argc, char* argv[]) {
         exit(69420);
     }
 
-    unsigned int sizes[3] = {3, 4, 2};
-    NeuralNetwork mnist(3, sizes);
+    unsigned int inputSize = 784;
+    unsigned int outputSize = 10;
+    unsigned int sizes[4] = {inputSize, 16, 16, outputSize};
+    NeuralNetwork mnist(4, sizes);
     mnist.setDataset(&data);
     
-    unsigned char inputData[4] = {0};
+    unsigned char inputData[784] = {0};
+    float fInputData[784] = {0};
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
 
-    float fInputData[3] = {0};
-    for (int i = 0; i < 3; i++) {
-        fInputData[i] = 0;
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            data.getImages()->read((char *)(&inputData[i * width + j]), sizeof(unsigned char));
+            fInputData[i * width + j] = inputData[i * width + j] / 255;
+        }
     }
     
     mnist.randomizeWeightsAndBiases();
     mnist.propagate(fInputData);
     float* lastLayer = mnist.getResults();
 
-    std::vector<Layer*> layers = mnist.getLayers();
-
-    std::cout << layers[1]->getNeuron(0)->getValue() * layers[2]->getWeight(0,0) + layers[1]->getNeuron(1)->getValue() * layers[2]->getWeight(1,0) + layers[2]->getBias(0) << std::endl;
-    std::cout << layers[1]->getNeuron(0)->getValue() * layers[2]->getWeight(0,1) + layers[1]->getNeuron(1)->getValue() * layers[2]->getWeight(1,1) + layers[2]->getBias(1) << std::endl;
-    std::cout << lastLayer[0] << std::endl;
-    std::cout << lastLayer[1] << std::endl;
+    for (int i = 0; i < outputSize; i++) {
+        std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "%" << std::endl;
+    }
     
     return 0;
 }
