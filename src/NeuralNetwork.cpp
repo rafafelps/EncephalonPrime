@@ -171,6 +171,7 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     gen.seed(time(NULL));
+    std::normal_distribution<float> d{0, 1};
 
     unsigned char currLayer = 1;
     unsigned char amountLayer = this->layers.size();
@@ -178,11 +179,12 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
     while (currLayer < amountLayer) {
         int layerSize = this->layers[currLayer]->getSize();
         int prevLayerSize = this->layers[currLayer-1]->getSize();
-        std::normal_distribution<float> d{0, sqrtf(2.f / prevLayerSize)};
+        float scaleFactor = sqrtf(2.f / prevLayerSize);
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                this->layers[currLayer]->setWeight(d(gen), prevNeuron, currNeuron);
+                float rValue = d(gen) * scaleFactor;
+                this->layers[currLayer]->setWeight(rValue, prevNeuron, currNeuron);
             }
             this->layers[currLayer]->setBias(0, currNeuron);
         }
