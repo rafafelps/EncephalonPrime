@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    mnist.randomizeWeightsAndBiases();
+    mnist.initializeReLU();
     mnist.propagate(fInputData);
     float* lastLayer = mnist.getResults();
 

@@ -23,6 +23,6 @@ public:
 
     void propagate(float* inputData);
     void backPropagate(float* correctData, std::vector<float*>* gradientList);
-    void randomizeWeightsAndBiases();
+    void initializeReLU();
     void updateWeightsAndBiases(float* negativeGradientVec);
 };

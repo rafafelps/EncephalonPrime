@@ -167,7 +167,7 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
     gradientList->push_back(gradientVec);
 }
 
-void NeuralNetwork::randomizeWeightsAndBiases() {
+void NeuralNetwork::initializeReLU() {
     std::random_device rd{};
     std::mt19937 gen{rd()};
     gen.seed(time(NULL));
