@@ -16,17 +16,17 @@ size(neuronAmount) {
 }
 
 Layer::~Layer() {
-    delete neuron;
+    delete[] neuron;
     
     if (weigth) {
         int weightRows = this->getSize();
         for (int i = 0; i < weightRows; i++) {
-            delete weigth[i];
+            delete[] weigth[i];
         }
     }
-    delete weigth;
+    delete[] weigth;
 
-    delete bias;
+    delete[] bias;
 }
 
 unsigned int Layer::getSize() const {

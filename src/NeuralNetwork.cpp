@@ -118,7 +118,7 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
                         this->layers[currLayer]->getSize();
     }
 
-    float* gradientVec = new float(gradientSize);
+    float* gradientVec = new float[gradientSize];
 
     unsigned char currLayer = amountLayers - 1;
     unsigned int layerSize = this->layers[currLayer]->getSize();
