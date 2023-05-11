@@ -1,8 +1,7 @@
-#include <cstdlib>
 #include <ctime>
 #include <cmath>
 #include <queue>
-#include <iostream>
+#include <random>
 #include "NeuralNetwork.hpp"
 
 NeuralNetwork::NeuralNetwork(const char* path) {
@@ -169,7 +168,9 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
 }
 
 void NeuralNetwork::randomizeWeightsAndBiases() {
-    //srand(time(NULL));
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    gen.seed(time(NULL));
 
     unsigned char currLayer = 1;
     unsigned char amountLayer = this->layers.size();
@@ -177,14 +178,13 @@ void NeuralNetwork::randomizeWeightsAndBiases() {
     while (currLayer < amountLayer) {
         int layerSize = this->layers[currLayer]->getSize();
         int prevLayerSize = this->layers[currLayer-1]->getSize();
+        std::normal_distribution<float> d{0, sqrtf(2.f / prevLayerSize)};
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                float r = -1.573 + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (1.443 + 1.573)));
-                this->layers[currLayer]->setWeight(r, prevNeuron, currNeuron);
+                this->layers[currLayer]->setWeight(d(gen), prevNeuron, currNeuron);
             }
-            float r = -1.573 + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (1.443 + 1.573)));
-            this->layers[currLayer]->setBias(r, currNeuron);
+            this->layers[currLayer]->setBias(0, currNeuron);
         }
 
         currLayer++;

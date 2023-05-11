@@ -3,8 +3,6 @@
 void littleEndianToBigEndian(unsigned int* value);
 
 Dataset::Dataset(const char* pathL, const char* pathI) {
-    this->images = NULL;
-    this->label = NULL;
     setData(pathL, pathI);
 }
 
@@ -42,12 +40,8 @@ void Dataset::setData(const char* pathL, const char* pathI) {
     unsigned int valueL = 0;
     unsigned int valueI = 0;
 
-    if (!this->images && !this->label) {
-        label = new std::ifstream(pathL, std::ios::binary);
-        images = new std::ifstream(pathI, std::ios::binary);
-    } else {
-        exit(static_cast<int>('P'));
-    }
+    label = new std::ifstream(pathL, std::ios::binary);
+    images = new std::ifstream(pathI, std::ios::binary);
 
     label->read((char*)&valueL, 4);
     images->read((char*)&valueI, 4);
