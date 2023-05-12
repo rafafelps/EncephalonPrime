@@ -15,6 +15,7 @@ public:
 
     float* getResults() const;
     std::vector<Layer*> getLayers() const;
+    unsigned int getGradientVecSize() const;
     void setDataset(Dataset* dataset);
 
     float ReLU(float val);

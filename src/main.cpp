@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     std::vector<float*> gradientList;
     float correctData[10] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0};
 
-    //mnist.backPropagate(correctData, &gradientList);
+    mnist.backPropagate(correctData, &gradientList);
 
     for (int i = 0; i < outputSize; i++) {
         std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "%" << std::endl;

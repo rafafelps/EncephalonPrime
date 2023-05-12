@@ -34,6 +34,19 @@ float* NeuralNetwork::getResults() const {
     return endVec;
 }
 
+unsigned int NeuralNetwork::getGradientVecSize() const {
+    unsigned int gradientSize = 0;
+    unsigned char amountLayers = this->layers.size();
+
+    for (int currLayer = 1; currLayer < amountLayers; currLayer++) {
+        gradientSize += this->layers[currLayer-1]->getSize() *
+                        this->layers[currLayer]->getSize() +
+                        this->layers[currLayer]->getSize();
+    }
+
+    return gradientSize;
+}
+
 void NeuralNetwork::setDataset(Dataset* dataset) {
     this->dataset = dataset;
 }
@@ -108,60 +121,61 @@ void NeuralNetwork::propagate(float* inputData) {
 }
 
 void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradientList) {
-    unsigned int gradientSize = 0;
-    unsigned char amountLayers = this->layers.size();
-
-    for (int currLayer = 1; currLayer < amountLayers; currLayer++) {
-        gradientSize += this->layers[currLayer-1]->getSize() *
-                        this->layers[currLayer]->getSize() +
-                        this->layers[currLayer]->getSize();
-    }
-
+    unsigned int gradientSize = this->getGradientVecSize();
     float* gradientVec = new float[gradientSize];
-
-    unsigned char currLayer = amountLayers - 1;
-    unsigned int layerSize = this->layers[currLayer]->getSize();
-    unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
     unsigned int gradientCounter = 0;
-    std::queue<float> deltas;
-    for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        float dCdA = 2 *
-                     (this->layers[currLayer]->getNeuron(currNeuron)->getValue()
-                     - correctData[currNeuron]);
-        deltas.push(dCdA);
+
+    unsigned char currLayer = this->layers.size() - 1;
+    unsigned int currLayerSize = this->layers[currLayer]->getSize();
+    unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+    std::vector<float> deltas;
+    
+    float dCdA = 0;
+    for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+        dCdA += 2 * (this->layers[currLayer]->getNeuron(currNeuron)->getValue() -
+                    correctData[currNeuron]);
+    }
+    for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
         float dRelu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+        float dCdB = dRelu * dCdA;
+        deltas.push_back(dCdB);
+
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() *
-                                             dRelu * dCdA;
+            gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
         }
-        gradientVec[gradientCounter++] = dCdA * dRelu;
-        // Add dCdA * dRelu to bias vec and add it later to gradientVec
+
+        gradientVec[gradientCounter++] = dCdB;
     }
 
     currLayer--;
     while (currLayer > 0) {
-        layerSize = this->layers[currLayer]->getSize();
+        currLayerSize = this->layers[currLayer]->getSize();
         prevLayerSize = this->layers[currLayer-1]->getSize();
-        for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
+        float nextLayerSize = this->layers[currLayer+1]->getSize();
+
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            
             float dCdA = 0;
-            float dRelu = 0;
-            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                unsigned int nextLayerSize = this->layers[currLayer+1]->getSize();
-
-                for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
-                    dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) *
-                            dReLU(this->layers[currLayer+1]->getNeuron(nextNeuron)->getValue()) *
-                            deltas.front();
-                    deltas.pop();
-                }
-                deltas.push(dCdA);
-                dRelu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
-
-                gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() *
-                                                 dRelu * dCdA;
+            for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
+                dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) *
+                        deltas[nextNeuron];
             }
-            gradientVec[gradientCounter++] = dCdA * dRelu;
+
+            float dReLu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+            float dCdB = dReLu * dCdA;
+            deltas.push_back(dCdB);
+
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
+            }
+
+            gradientVec[gradientCounter++] = dCdB;
         }
+
+        for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
+            deltas.erase(deltas.begin());
+        }
+
         currLayer--;
     }
     gradientList->push_back(gradientVec);
