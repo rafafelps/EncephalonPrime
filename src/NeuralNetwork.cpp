@@ -207,10 +207,24 @@ void NeuralNetwork::initializeReLU() {
     }
 }
 
-void NeuralNetwork::updateWeightsAndBiases(float* negativeGradientVec) {
+void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
+    unsigned int gradientSize = getGradientVecSize();
+    unsigned char currLayer = this->layers.size() - 1;
+    unsigned int gradientCounter = 0;
+    float val = 0;
 
-}
+    while (currLayer > 0) {
+        unsigned int currLayerSize = this->layers[currLayer]->getSize();
+        unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                val = this->layers[currLayer]->getWeight(prevNeuron, currNeuron) - gradientVec[gradientCounter++];
+                this->layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
+            }
+            val = this->layers[currLayer]->getBias(currNeuron) - gradientVec[gradientCounter++];
+            this->layers[currLayer]->setBias(val, currNeuron);
+        }
 
-std::vector<Layer*> NeuralNetwork::getLayers() const {
-    return this->layers;
+        currLayer--;
+    }
 }

@@ -14,7 +14,6 @@ public:
     ~NeuralNetwork();
 
     float* getResults() const;
-    std::vector<Layer*> getLayers() const;
     unsigned int getGradientVecSize() const;
     void setDataset(Dataset* dataset);
 
@@ -25,5 +24,5 @@ public:
     void propagate(float* inputData);
     void backPropagate(float* correctData, std::vector<float*>* gradientList);
     void initializeReLU();
-    void updateWeightsAndBiases(float* negativeGradientVec);
+    void updateWeightsAndBiases(float* gradientVec);
 };
