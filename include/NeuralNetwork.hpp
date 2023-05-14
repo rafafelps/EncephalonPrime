@@ -22,7 +22,7 @@ public:
     void softmax(float* results);
 
     void propagate(float* inputData);
-    void backPropagate(float* correctData, std::vector<float*>* gradientList);
+    void backPropagate(float* correctData, float* gradientVec);
     void initializeReLU();
     void updateWeightsAndBiases(float* gradientVec);
 };

@@ -120,9 +120,7 @@ void NeuralNetwork::propagate(float* inputData) {
     }
 }
 
-void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradientList) {
-    unsigned int gradientSize = this->getGradientVecSize();
-    float* gradientVec = new float[gradientSize];
+void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     unsigned int gradientCounter = 0;
 
     unsigned char currLayer = this->layers.size() - 1;
@@ -141,10 +139,10 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
         deltas.push_back(dCdB);
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
+            gradientVec[gradientCounter++] += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
         }
 
-        gradientVec[gradientCounter++] = dCdB;
+        gradientVec[gradientCounter++] += dCdB;
     }
 
     currLayer--;
@@ -166,10 +164,10 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
             deltas.push_back(dCdB);
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                gradientVec[gradientCounter++] = this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
+                gradientVec[gradientCounter++] += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
             }
 
-            gradientVec[gradientCounter++] = dCdB;
+            gradientVec[gradientCounter++] += dCdB;
         }
 
         for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
@@ -178,7 +176,6 @@ void NeuralNetwork::backPropagate(float* correctData, std::vector<float*>* gradi
 
         currLayer--;
     }
-    gradientList->push_back(gradientVec);
 }
 
 void NeuralNetwork::initializeReLU() {
