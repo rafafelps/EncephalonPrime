@@ -19,7 +19,7 @@ public:
 
     float ReLU(float val);
     float dReLU(float val);
-    void softmax(float* results);
+    void softmax(unsigned char layer);
 
     void propagate(float* inputData);
     void backPropagate(float* correctData, float* gradientVec);
