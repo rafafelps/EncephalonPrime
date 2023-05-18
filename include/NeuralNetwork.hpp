@@ -13,6 +13,7 @@ public:
     NeuralNetwork(unsigned char layerAmount, unsigned int* sizes);
     ~NeuralNetwork();
 
+    std::vector<Layer*> getLayers() const;
     float* getResults() const;
     unsigned int getGradientVecSize() const;
     void setDataset(Dataset* dataset);
