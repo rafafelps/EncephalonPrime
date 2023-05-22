@@ -63,8 +63,16 @@ float NeuralNetwork::dReLU(float val) {
 void NeuralNetwork::softmax(unsigned char layer) {
     unsigned int layerSize = this->layers[layer]->getSize();
 
+    float highVal = this->layers[layer]->getNeuron(0)->getValue();
+    for (int currNeuron = 1; currNeuron < layerSize; currNeuron++) {
+        float curVal = this->layers[layer]->getNeuron(currNeuron)->getValue();
+        if (curVal > highVal) { highVal = curVal; }
+    }
+
     float total = 0;
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
+        float curVal = this->layers[layer]->getNeuron(currNeuron)->getValue();
+        this->layers[layer]->getNeuron(currNeuron)->setValue(curVal - highVal);
         total += expf(this->layers[layer]->getNeuron(currNeuron)->getValue());
     }
 
