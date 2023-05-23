@@ -17,47 +17,65 @@ int main(int argc, char* argv[]) {
         exit(69420);
     }
 
-    unsigned int inputSize = 2;
-    unsigned int outputSize = 2;
-    unsigned int sizes[3] = {inputSize, 3, outputSize};
-    NeuralNetwork mnist(3, sizes);
+    unsigned int inputSize = 784;
+    unsigned int outputSize = 10;
+    unsigned int sizes[4] = {inputSize, 16, 16, outputSize};
+    NeuralNetwork mnist(4, sizes);
     mnist.setDataset(&data);
     mnist.initializeReLU();
     
     unsigned char inputData = 0;
-    float fInputData[2] = {0, 1};
+    float* fInputData = new float[784]();
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
 
     unsigned int gradientVecSize = mnist.getGradientVecSize();
 
-    std::vector<Layer*> layers = mnist.getLayers();
-    layers[1]->setWeight(-0.17628916, 0, 0);
-    layers[1]->setWeight(0.60783723, 1, 0);
-    layers[1]->setWeight(-0.82100356, 0, 1);
-    layers[1]->setWeight(-0.07367439, 1, 1);
-    layers[1]->setWeight(1.73245199, 0, 2);
-    layers[1]->setWeight(-0.44930451, 1, 2);
+    for (int epoch = 0; epoch < 40; epoch++) {
+        data.getImages()->seekg(16);
+        data.getLabel()->seekg(8);
 
-    layers[2]->setWeight(0.15498288, 0, 0);
-    layers[2]->setWeight(0.53511806, 1, 0);
-    layers[2]->setWeight(-0.19673162, 2, 0);
-    layers[2]->setWeight(0.67081392, 0, 1);
-    layers[2]->setWeight(-0.91220382, 1, 1);
-    layers[2]->setWeight(-0.52278519, 2, 1);
+        for (int times = 0; times < 60; times++) {
+            float* gradientVec = new float[gradientVecSize]();
 
-    float correctData[2] = {1, 0};
-    inputData = 0;
-    
-    for (int epoch = 0; epoch < 1000; epoch++) {
-        float* gradientVec = new float[gradientVecSize]();
-        mnist.propagate(fInputData);
-        mnist.backPropagate(correctData, gradientVec);
-        for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] *= 1; }
-        mnist.updateWeightsAndBiases(gradientVec);
-        delete[] gradientVec;
+            for (int image = 0; image < 1000; image++) {
+                float* correctData = new float[outputSize]();
+
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
+                        fInputData[i * width + j] = inputData / 255;
+                    }
+                }
+
+                data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
+                correctData[inputData++];
+
+                mnist.propagate(fInputData);
+                mnist.backPropagate(correctData, gradientVec);
+
+                delete[] correctData;
+            }
+            
+            for (int i = 0; i < 1000; i++) { gradientVec[i] /= 1000; }
+            mnist.updateWeightsAndBiases(gradientVec);
+
+            delete[] gradientVec;
+        }
     }
+
+    data.getImages()->seekg(16);
+    data.getLabel()->seekg(8);
+
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
+            fInputData[i * width + j] = inputData / 255;
+        }
+    }
+
+    data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
     mnist.propagate(fInputData);
 
     /*

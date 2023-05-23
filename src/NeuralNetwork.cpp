@@ -13,6 +13,8 @@ NeuralNetwork::NeuralNetwork(unsigned char layerAmount, unsigned int* sizes) {
     for (int i = 1; i < layerAmount; i++) {
         this->layers.push_back(new Layer(sizes[i], layers[i-1]));
     }
+
+    netfile = new std::fstream;
 }
 
 NeuralNetwork::~NeuralNetwork() {
@@ -21,6 +23,8 @@ NeuralNetwork::~NeuralNetwork() {
         delete layers[i];
     }
     layers.clear();
+
+    delete netfile;
 }
 
 float* NeuralNetwork::getResults() const {
@@ -229,6 +233,9 @@ void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
     }
 }
 
-std::vector<Layer*> NeuralNetwork::getLayers() const {
-    return this->layers;
+void NeuralNetwork::saveNetworkState(const char* path) {
+    netfile->open("/bin/neuralconfig.bin", std::ios::out | std::ios::binary | std::ios::trunc);
+
+    // Percorre tudo e sai escrevendo *netfile <<
+
 }
