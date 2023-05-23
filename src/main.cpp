@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     mnist.initializeReLU();
     
     unsigned char inputData = 0;
-    float fInputData[784] = {0};
+    float fInputData[2] = {0, 1};
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
@@ -46,21 +46,15 @@ int main(int argc, char* argv[]) {
     layers[2]->setWeight(0.67081392, 0, 1);
     layers[2]->setWeight(-0.91220382, 1, 1);
     layers[2]->setWeight(-0.52278519, 2, 1);
-    float* correctData = new float[10]();
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
-            fInputData[i * width + j] = inputData / 255;
-        }
-    }
-    data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
-    correctData[inputData]++;
+
+    float correctData[2] = {1, 0};
+    inputData = 0;
     
-    for (int epoch = 0; epoch < 100; epoch++) {
+    for (int epoch = 0; epoch < 1000; epoch++) {
         float* gradientVec = new float[gradientVecSize]();
         mnist.propagate(fInputData);
         mnist.backPropagate(correctData, gradientVec);
-        for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] *= 0.0001; }
+        for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] *= 1; }
         mnist.updateWeightsAndBiases(gradientVec);
         delete[] gradientVec;
     }

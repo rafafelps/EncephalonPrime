@@ -137,21 +137,17 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     std::vector<float> deltas;
     
     // Derivative of Cross-Entropy Loss (Multi-Class Classification)
-    float dCdA = 0;
-    for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
-        dCdA -= (correctData[currNeuron] / this->layers[currLayer]->getNeuron(currNeuron)->getValue());
-    }
     for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
         float softmax = this->layers[currLayer]->getNeuron(currNeuron)->getValue();
         float dSoftmax = softmax * (1 - softmax);
-        float dCdB = dSoftmax * dCdA;
-        deltas.push_back(dCdB);
+        float dCdA = - (correctData[currNeuron] / this->layers[currLayer]->getNeuron(currNeuron)->getValue());
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
+            gradientVec[gradientCounter++] += dCdA * dSoftmax * this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
         }
 
-        gradientVec[gradientCounter++] += dCdB;
+        gradientVec[gradientCounter++] += dCdA * dSoftmax;
+        deltas.push_back(dCdA * dSoftmax);
     }
 
     currLayer--;
@@ -160,27 +156,26 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
         prevLayerSize = this->layers[currLayer-1]->getSize();
         float nextLayerSize = this->layers[currLayer+1]->getSize();
 
+        float deltaSum = 0;
+        int deltasSize = deltas.size();
+        for (int i = 0; i < deltasSize; i++) { deltaSum += deltas[i]; }
+        deltas.clear();
+        
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
-            
             float dCdA = 0;
             for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
-                dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) *
-                        deltas[nextNeuron];
+                dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) * deltaSum;
             }
 
             float dReLu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
-            float dCdB = dReLu * dCdA;
-            deltas.push_back(dCdB);
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                gradientVec[gradientCounter++] += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * dCdB;
+                gradientVec[gradientCounter++] += dCdA * dReLu * this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
             }
 
-            gradientVec[gradientCounter++] += dCdB;
+            gradientVec[gradientCounter++] += dCdA * dReLu;
+            deltas.push_back(dCdA * dReLu);
         }
-
-        deltas.erase(deltas.begin(), deltas.begin() + nextLayerSize);
-
         currLayer--;
     }
 }
@@ -215,11 +210,12 @@ void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
     unsigned int gradientSize = getGradientVecSize();
     unsigned char currLayer = this->layers.size() - 1;
     unsigned int gradientCounter = 0;
-    float val = 0;
 
+    float val = 0;
     while (currLayer > 0) {
         unsigned int currLayerSize = this->layers[currLayer]->getSize();
         unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+        
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
                 val = this->layers[currLayer]->getWeight(prevNeuron, currNeuron) - gradientVec[gradientCounter++];
