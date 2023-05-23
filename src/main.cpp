@@ -17,10 +17,10 @@ int main(int argc, char* argv[]) {
         exit(69420);
     }
 
-    unsigned int inputSize = 784;
-    unsigned int outputSize = 10;
-    unsigned int sizes[4] = {inputSize, 16, 16, outputSize};
-    NeuralNetwork mnist(4, sizes);
+    unsigned int inputSize = 2;
+    unsigned int outputSize = 2;
+    unsigned int sizes[3] = {inputSize, 3, outputSize};
+    NeuralNetwork mnist(3, sizes);
     mnist.setDataset(&data);
     mnist.initializeReLU();
     
@@ -33,19 +33,19 @@ int main(int argc, char* argv[]) {
     unsigned int gradientVecSize = mnist.getGradientVecSize();
 
     std::vector<Layer*> layers = mnist.getLayers();
-    /*layers[1]->setWeight(1.24, 0, 0);
-    layers[1]->setWeight(0.91, 1, 0);
-    layers[1]->setWeight(-0.73, 0, 1);
-    layers[1]->setWeight(0.32, 1, 1);
-    layers[1]->setWeight(-0.45, 0, 2);
-    layers[1]->setWeight(-0.16, 1, 2);
+    layers[1]->setWeight(-0.17628916, 0, 0);
+    layers[1]->setWeight(0.60783723, 1, 0);
+    layers[1]->setWeight(-0.82100356, 0, 1);
+    layers[1]->setWeight(-0.07367439, 1, 1);
+    layers[1]->setWeight(1.73245199, 0, 2);
+    layers[1]->setWeight(-0.44930451, 1, 2);
 
-    layers[2]->setWeight(-0.71, 0, 0);
-    layers[2]->setWeight(0.64, 1, 0);
-    layers[2]->setWeight(-0.87, 2, 0);
-    layers[2]->setWeight(-0.18, 0, 1);
-    layers[2]->setWeight(0.55, 1, 1);
-    layers[2]->setWeight(0.19, 2, 1);*/
+    layers[2]->setWeight(0.15498288, 0, 0);
+    layers[2]->setWeight(0.53511806, 1, 0);
+    layers[2]->setWeight(-0.19673162, 2, 0);
+    layers[2]->setWeight(0.67081392, 0, 1);
+    layers[2]->setWeight(-0.91220382, 1, 1);
+    layers[2]->setWeight(-0.52278519, 2, 1);
     float* correctData = new float[10]();
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -53,22 +53,19 @@ int main(int argc, char* argv[]) {
             fInputData[i * width + j] = inputData / 255;
         }
     }
-    float* gradientVec = new float[gradientVecSize]();
     data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
     correctData[inputData]++;
+    
+    for (int epoch = 0; epoch < 100; epoch++) {
+        float* gradientVec = new float[gradientVecSize]();
+        mnist.propagate(fInputData);
+        mnist.backPropagate(correctData, gradientVec);
+        for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] *= 0.0001; }
+        mnist.updateWeightsAndBiases(gradientVec);
+        delete[] gradientVec;
+    }
     mnist.propagate(fInputData);
-    mnist.backPropagate(correctData, gradientVec);
-    mnist.updateWeightsAndBiases(gradientVec);
-    for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] = 0; }
-    mnist.propagate(fInputData);
-    mnist.backPropagate(correctData, gradientVec);
-    mnist.updateWeightsAndBiases(gradientVec);
-    mnist.propagate(fInputData);
-    for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] = 0; }
-    mnist.propagate(fInputData);
-    mnist.backPropagate(correctData, gradientVec);
-    mnist.updateWeightsAndBiases(gradientVec);
-    mnist.propagate(fInputData);
+
     /*
 
     for (int i = 0; i < height; i++) {
