@@ -30,7 +30,6 @@ int main(int argc, char* argv[]) {
     int height = data.getHeight();
     int size = data.getSize();
 
-    /*
     unsigned int gradientVecSize = mnist.getGradientVecSize();
 
     for (int epoch = 0; epoch < 40; epoch++) {
@@ -59,18 +58,17 @@ int main(int argc, char* argv[]) {
                 delete[] correctData;
             }
             
-            for (int i = 0; i < 1000; i++) { gradientVec[i] /= 100000; }
+            for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] /= 100000; }
             mnist.updateWeightsAndBiases(gradientVec);
 
             delete[] gradientVec;
         }
-    }*/
-
-    mnist.loadNetworkState("bin/mnist.bin");
+    }
+    mnist.saveNetworkState("bin/mnist.bin");
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);
-    
+
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
