@@ -234,8 +234,40 @@ void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
 }
 
 void NeuralNetwork::saveNetworkState(const char* path) {
-    netfile->open("/bin/neuralconfig.bin", std::ios::out | std::ios::binary | std::ios::trunc);
+    netfile->open(path, std::ios::out | std::ios::binary | std::ios::trunc);
+    
+    int amountLayers = layers.size();
+    netfile->write(reinterpret_cast<const char*>(&amountLayers), sizeof(int));
 
-    // Percorre tudo e sai escrevendo *netfile <<
+    for (int layer = 0; layer < amountLayers; layer++) {
+        int layerSz = layers[layer]->getSize();
+        netfile->write(reinterpret_cast<const char*>(&layerSz), sizeof(int));
+    }
 
+    int currLayer = 1;
+    while (currLayer < amountLayers) {
+        int currLayerSize = layers[currLayer]->getSize();
+
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            int prevLayerSize = layers[currLayer-1]->getSize();
+
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                float val = layers[currLayer]->getWeight(prevNeuron, currNeuron);
+                netfile->write(reinterpret_cast<const char*>(&val), sizeof(float));
+            }
+
+            float val = layers[currLayer]->getBias(currNeuron);
+            netfile->write(reinterpret_cast<const char*>(&val), sizeof(float));
+        }
+
+        currLayer++;
+    }
+
+    netfile->close();
+}
+
+void NeuralNetwork::loadNetworkState(const char* path) {
+    netfile->open(path, std::ios::in | std::ios::binary);
+
+    
 }

@@ -23,6 +23,8 @@ int main(int argc, char* argv[]) {
     NeuralNetwork mnist(4, sizes);
     mnist.setDataset(&data);
     mnist.initializeReLU();
+    mnist.saveNetworkState("bin/neuralconfig.bin");
+    return 0;
     
     unsigned char inputData = 0;
     float* fInputData = new float[784]();

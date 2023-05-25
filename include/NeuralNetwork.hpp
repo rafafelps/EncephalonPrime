@@ -28,4 +28,5 @@ public:
     void initializeReLU();
     void updateWeightsAndBiases(float* gradientVec);
     void saveNetworkState(const char* path);
+    void loadNetworkState(const char* path);
 };
