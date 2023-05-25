@@ -237,12 +237,12 @@ void NeuralNetwork::saveNetworkState(const char* path) {
     netfile->open(path, std::ios::out | std::ios::binary | std::ios::trunc);
     
     int amountLayers = layers.size();
-    netfile->write(reinterpret_cast<const char*>(&amountLayers), sizeof(int));
+    /*netfile->write(reinterpret_cast<const char*>(&amountLayers), sizeof(int));
 
     for (int layer = 0; layer < amountLayers; layer++) {
         int layerSz = layers[layer]->getSize();
         netfile->write(reinterpret_cast<const char*>(&layerSz), sizeof(int));
-    }
+    }*/
 
     int currLayer = 1;
     while (currLayer < amountLayers) {
@@ -269,5 +269,28 @@ void NeuralNetwork::saveNetworkState(const char* path) {
 void NeuralNetwork::loadNetworkState(const char* path) {
     netfile->open(path, std::ios::in | std::ios::binary);
 
-    
+    int amountLayers = layers.size();
+    int currLayer = 1;
+
+    while (currLayer < amountLayers) {
+        int currLayerSize = layers[currLayer]->getSize();
+
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            int prevLayerSize = layers[currLayer-1]->getSize();
+            
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                float val;
+                netfile->read(reinterpret_cast<char*>(&val), sizeof(float));
+                layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
+            }
+
+            float val;
+            netfile->read(reinterpret_cast<char*>(&val), sizeof(float));
+            layers[currLayer]->setBias(val, currNeuron);
+        }
+
+        currLayer++;
+    }
+
+    netfile->close();
 }

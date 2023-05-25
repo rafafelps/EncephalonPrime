@@ -23,8 +23,6 @@ int main(int argc, char* argv[]) {
     NeuralNetwork mnist(4, sizes);
     mnist.setDataset(&data);
     mnist.initializeReLU();
-    mnist.saveNetworkState("bin/neuralconfig.bin");
-    return 0;
     
     unsigned char inputData = 0;
     float* fInputData = new float[784]();
@@ -60,7 +58,7 @@ int main(int argc, char* argv[]) {
                 delete[] correctData;
             }
             
-            for (int i = 0; i < 1000; i++) { gradientVec[i] /= 1000; }
+            for (int i = 0; i < 1000; i++) { gradientVec[i] /= 100000; }
             mnist.updateWeightsAndBiases(gradientVec);
 
             delete[] gradientVec;
