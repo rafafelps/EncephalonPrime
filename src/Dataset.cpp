@@ -1,6 +1,6 @@
 #include "Dataset.hpp"
 
-void littleEndianToBigEndian(unsigned int* value);
+#define SWAP_INT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
 Dataset::Dataset(const char* pathL, const char* pathI) {
     setData(pathL, pathI);
@@ -45,36 +45,22 @@ void Dataset::setData(const char* pathL, const char* pathI) {
 
     label->read((char*)&valueL, 4);
     images->read((char*)&valueI, 4);
-    littleEndianToBigEndian(&valueL);
-    littleEndianToBigEndian(&valueI);
+    valueL = SWAP_INT32(valueL);
+    valueI = SWAP_INT32(valueI);
     if (valueL != 2049 || valueI != 2051) { this->~Dataset(); return; }
 
-    valueL = 0; valueI = 0;
     label->read((char*)&valueL, 4);
     images->read((char*)&valueI, 4);
-    littleEndianToBigEndian(&valueL);
-    littleEndianToBigEndian(&valueI);
+    valueL = SWAP_INT32(valueL);
+    valueI = SWAP_INT32(valueI);
     if (valueL != valueI) { this->~Dataset(); return; }
     this->size = valueL;
 
-    valueI = 0;
     images->read((char*)&valueI, 4);
-    littleEndianToBigEndian(&valueI);
+    valueI = SWAP_INT32(valueI);;
     this->height = valueI;
 
-    valueI = 0;
     images->read((char*)&valueI, 4);
-    littleEndianToBigEndian(&valueI);
+    valueI = SWAP_INT32(valueI);
     this->width = valueI;
-}
-
-void littleEndianToBigEndian(unsigned int* value) {
-    unsigned int b1 = 0xFF000000;
-    unsigned int tmp = *value;
-
-    *value = 0;
-    *value += (tmp & b1) >> 24;
-    *value += (tmp & (b1 >> 8)) >> 8;
-    *value += (tmp & (b1 >> 16)) << 8;
-    *value += (tmp & (b1 >> 24)) << 24;
 }
