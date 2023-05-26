@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <fstream>
 #include "Layer.hpp"
 #include "Dataset.hpp"
 
@@ -9,15 +8,16 @@ class NeuralNetwork {
 private:
     Dataset* dataset;
     std::vector<Layer*> layers;
-    std::fstream* netfile;
+    std::string name;
 public:
-    NeuralNetwork(const char* path);
-    NeuralNetwork(unsigned char layerAmount, unsigned int* sizes);
+    NeuralNetwork(std::string name);
+    NeuralNetwork(unsigned int layerAmount, unsigned int* sizes);
     ~NeuralNetwork();
 
     float* getResults() const;
     unsigned int getGradientVecSize() const;
     void setDataset(Dataset* dataset);
+    void setName(std::string name);
 
     float ReLU(float val);
     float dReLU(float val);
@@ -27,6 +27,6 @@ public:
     void backPropagate(float* correctData, float* gradientVec);
     void initializeReLU();
     void updateWeightsAndBiases(float* gradientVec);
-    void saveNetworkState(const char* path);
-    void loadNetworkState(const char* path);
+    void saveNetworkState();
+    void loadNetworkState();
 };

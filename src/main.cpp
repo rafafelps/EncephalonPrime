@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     unsigned int sizes[4] = {inputSize, 16, 16, outputSize};
     NeuralNetwork mnist(4, sizes);
     mnist.setDataset(&data);
+    mnist.setName("mnist");
     mnist.initializeReLU();
     
     unsigned char inputData = 0;
@@ -32,7 +33,7 @@ int main(int argc, char* argv[]) {
 
     unsigned int gradientVecSize = mnist.getGradientVecSize();
 
-    for (int epoch = 0; epoch < 40; epoch++) {
+    for (int epoch = 0; epoch < 100; epoch++) {
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
 
@@ -44,12 +45,12 @@ int main(int argc, char* argv[]) {
 
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
-                        data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
+                        data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
                         fInputData[i * width + j] = inputData / 255;
                     }
                 }
 
-                data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
+                data.getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
                 correctData[inputData++];
 
                 mnist.propagate(fInputData);
@@ -64,26 +65,26 @@ int main(int argc, char* argv[]) {
             delete[] gradientVec;
         }
     }
-    mnist.saveNetworkState("bin/mnist.bin");
+    mnist.saveNetworkState();
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
+            data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
             fInputData[i * width + j] = inputData / 255;
         }
     }
 
-    data.getLabel()->read((char*)(&inputData), sizeof(unsigned char));
+    data.getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
     mnist.propagate(fInputData);
 
     /*
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            data.getImages()->read((char*)(&inputData), sizeof(unsigned char));
+            data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
             fInputData[i * width + j] = inputData / 255;
         }
     }*/
