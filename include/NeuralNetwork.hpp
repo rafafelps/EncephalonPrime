@@ -26,7 +26,7 @@ public:
     void propagate(float* inputData);
     void backPropagate(float* correctData, float* gradientVec);
     void initializeReLU();
-    void updateWeightsAndBiases(float* gradientVec);
+    void updateWeightsAndBiases(float learningRate, float* gradientVec);
     void saveNetworkState();
     void loadNetworkState();
 };

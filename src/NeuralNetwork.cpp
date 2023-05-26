@@ -227,7 +227,7 @@ void NeuralNetwork::initializeReLU() {
     }
 }
 
-void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
+void NeuralNetwork::updateWeightsAndBiases(float learningRate, float* gradientVec) {
     unsigned int gradientSize = getGradientVecSize();
     unsigned char currLayer = layers.size() - 1;
     unsigned int gradientCounter = 0;
@@ -239,10 +239,10 @@ void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
         
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                val = layers[currLayer]->getWeight(prevNeuron, currNeuron) - gradientVec[gradientCounter++];
+                val = layers[currLayer]->getWeight(prevNeuron, currNeuron) - (learningRate * gradientVec[gradientCounter++]);
                 layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
             }
-            val = layers[currLayer]->getBias(currNeuron) - gradientVec[gradientCounter++];
+            val = layers[currLayer]->getBias(currNeuron) - (learningRate * gradientVec[gradientCounter++]);
             layers[currLayer]->setBias(val, currNeuron);
         }
 
