@@ -26,9 +26,9 @@ NeuralNetwork::NeuralNetwork(std::string name) {
 }
 
 NeuralNetwork::NeuralNetwork(unsigned int layerAmount, unsigned int* sizes) {
-    this->layers.push_back(new Layer(sizes[0], NULL));
+    layers.push_back(new Layer(sizes[0], NULL));
     for (int layer = 1; layer < layerAmount; layer++) {
-        this->layers.push_back(new Layer(sizes[layer], layers[layer-1]));
+        layers.push_back(new Layer(sizes[layer], layers[layer-1]));
     }
 }
 
@@ -41,12 +41,12 @@ NeuralNetwork::~NeuralNetwork() {
 }
 
 float* NeuralNetwork::getResults() const {
-    unsigned char currLayer = this->layers.size() - 1;
-    unsigned int layerSize = this->layers[currLayer]->getSize();
+    unsigned char currLayer = layers.size() - 1;
+    unsigned int layerSize = layers[currLayer]->getSize();
     float* endVec = new float[layerSize];
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        endVec[currNeuron] = this->layers[currLayer]->getNeuron(currNeuron)->getValue();
+        endVec[currNeuron] = layers[currLayer]->getNeuron(currNeuron)->getValue();
     }
 
     return endVec;
@@ -54,12 +54,12 @@ float* NeuralNetwork::getResults() const {
 
 unsigned int NeuralNetwork::getGradientVecSize() const {
     unsigned int gradientSize = 0;
-    unsigned char amountLayers = this->layers.size();
+    unsigned char amountLayers = layers.size();
 
     for (int currLayer = 1; currLayer < amountLayers; currLayer++) {
-        gradientSize += this->layers[currLayer-1]->getSize() *
-                        this->layers[currLayer]->getSize() +
-                        this->layers[currLayer]->getSize();
+        gradientSize += layers[currLayer-1]->getSize() *
+                        layers[currLayer]->getSize() +
+                        layers[currLayer]->getSize();
     }
 
     return gradientSize;
@@ -82,68 +82,68 @@ float NeuralNetwork::dReLU(float val) {
 }
 
 void NeuralNetwork::softmax(unsigned char layer) {
-    unsigned int layerSize = this->layers[layer]->getSize();
+    unsigned int layerSize = layers[layer]->getSize();
 
-    float highVal = this->layers[layer]->getNeuron(0)->getValue();
+    float highVal = layers[layer]->getNeuron(0)->getValue();
     for (int currNeuron = 1; currNeuron < layerSize; currNeuron++) {
-        float curVal = this->layers[layer]->getNeuron(currNeuron)->getValue();
+        float curVal = layers[layer]->getNeuron(currNeuron)->getValue();
         if (curVal > highVal) { highVal = curVal; }
     }
 
     float total = 0;
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        float curVal = this->layers[layer]->getNeuron(currNeuron)->getValue();
-        this->layers[layer]->getNeuron(currNeuron)->setValue(curVal - highVal);
-        total += expf(this->layers[layer]->getNeuron(currNeuron)->getValue());
+        float curVal = layers[layer]->getNeuron(currNeuron)->getValue();
+        layers[layer]->getNeuron(currNeuron)->setValue(curVal - highVal);
+        total += expf(layers[layer]->getNeuron(currNeuron)->getValue());
     }
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        float neuronVal = expf(this->layers[layer]->getNeuron(currNeuron)->getValue());
-        this->layers[layer]->getNeuron(currNeuron)->setValue(neuronVal / total);
+        float neuronVal = expf(layers[layer]->getNeuron(currNeuron)->getValue());
+        layers[layer]->getNeuron(currNeuron)->setValue(neuronVal / total);
     }
 }
 
 void NeuralNetwork::propagate(float* inputData) {
     unsigned char currLayer = 0;
     unsigned char amountLayers = layers.size() - 1;
-    unsigned int layerSize = this->layers[currLayer]->getSize();
+    unsigned int layerSize = layers[currLayer]->getSize();
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        this->layers[currLayer]->getNeuron(currNeuron)->setValue(inputData[currNeuron]);
+        layers[currLayer]->getNeuron(currNeuron)->setValue(inputData[currNeuron]);
     }
     currLayer++;
 
     while (currLayer < amountLayers) {
-        layerSize = this->layers[currLayer]->getSize();
-        int prevLayerSize = this->layers[currLayer-1]->getSize();
+        layerSize = layers[currLayer]->getSize();
+        int prevLayerSize = layers[currLayer-1]->getSize();
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             float activationValue = 0;
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                activationValue += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
-                this->layers[currLayer]->getWeight(prevNeuron, currNeuron);
+                activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
+                                   layers[currLayer]->getWeight(prevNeuron, currNeuron);
             }
 
-            activationValue += this->layers[currLayer]->getBias(currNeuron);
-            this->layers[currLayer]->getNeuron(currNeuron)->setValue(this->ReLU(activationValue));
+            activationValue += layers[currLayer]->getBias(currNeuron);
+            layers[currLayer]->getNeuron(currNeuron)->setValue(ReLU(activationValue));
         }
         currLayer++;
     }
 
-    layerSize = this->layers[currLayer]->getSize();
-    int prevLayerSize = this->layers[currLayer-1]->getSize();
+    layerSize = layers[currLayer]->getSize();
+    int prevLayerSize = layers[currLayer-1]->getSize();
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         float activationValue = 0;
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            activationValue += this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
-            this->layers[currLayer]->getWeight(prevNeuron, currNeuron);
+            activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
+                               layers[currLayer]->getWeight(prevNeuron, currNeuron);
         }
 
-        activationValue += this->layers[currLayer]->getBias(currNeuron);
-        this->layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue);
+        activationValue += layers[currLayer]->getBias(currNeuron);
+        layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue);
     }
 
     softmax(currLayer);
@@ -152,19 +152,19 @@ void NeuralNetwork::propagate(float* inputData) {
 void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     unsigned int gradientCounter = 0;
 
-    unsigned char currLayer = this->layers.size() - 1;
-    unsigned int currLayerSize = this->layers[currLayer]->getSize();
-    unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+    unsigned char currLayer = layers.size() - 1;
+    unsigned int currLayerSize = layers[currLayer]->getSize();
+    unsigned int prevLayerSize = layers[currLayer-1]->getSize();
     std::vector<float> deltas;
     
     // Derivative of Cross-Entropy Loss (Multi-Class Classification)
     for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
-        float softmax = this->layers[currLayer]->getNeuron(currNeuron)->getValue();
+        float softmax = layers[currLayer]->getNeuron(currNeuron)->getValue();
         float dSoftmax = softmax * (1 - softmax);
-        float dCdA = - (correctData[currNeuron] / this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+        float dCdA = - (correctData[currNeuron] / layers[currLayer]->getNeuron(currNeuron)->getValue());
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] += dCdA * dSoftmax * this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
+            gradientVec[gradientCounter++] += dCdA * dSoftmax * layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
         }
 
         gradientVec[gradientCounter++] += dCdA * dSoftmax;
@@ -173,9 +173,9 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
 
     currLayer--;
     while (currLayer > 0) {
-        currLayerSize = this->layers[currLayer]->getSize();
-        prevLayerSize = this->layers[currLayer-1]->getSize();
-        float nextLayerSize = this->layers[currLayer+1]->getSize();
+        currLayerSize = layers[currLayer]->getSize();
+        prevLayerSize = layers[currLayer-1]->getSize();
+        float nextLayerSize = layers[currLayer+1]->getSize();
 
         float deltaSum = 0;
         int deltasSize = deltas.size();
@@ -185,13 +185,13 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
             float dCdA = 0;
             for (int nextNeuron = 0; nextNeuron < nextLayerSize; nextNeuron++) {
-                dCdA += this->layers[currLayer+1]->getWeight(currNeuron, nextNeuron) * deltaSum;
+                dCdA += layers[currLayer+1]->getWeight(currNeuron, nextNeuron) * deltaSum;
             }
 
-            float dReLu = dReLU(this->layers[currLayer]->getNeuron(currNeuron)->getValue());
+            float dReLu = dReLU(layers[currLayer]->getNeuron(currNeuron)->getValue());
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                gradientVec[gradientCounter++] += dCdA * dReLu * this->layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
+                gradientVec[gradientCounter++] += dCdA * dReLu * layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
             }
 
             gradientVec[gradientCounter++] += dCdA * dReLu;
@@ -208,19 +208,19 @@ void NeuralNetwork::initializeReLU() {
     std::normal_distribution<float> d{0, 1};
 
     unsigned char currLayer = 1;
-    unsigned char amountLayer = this->layers.size();
+    unsigned char amountLayer = layers.size();
 
     while (currLayer < amountLayer) {
-        int layerSize = this->layers[currLayer]->getSize();
-        int prevLayerSize = this->layers[currLayer-1]->getSize();
+        int layerSize = layers[currLayer]->getSize();
+        int prevLayerSize = layers[currLayer-1]->getSize();
         float scaleFactor = sqrtf(2.f / prevLayerSize);
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
                 float rValue = d(gen) * scaleFactor;
-                this->layers[currLayer]->setWeight(rValue, prevNeuron, currNeuron);
+                layers[currLayer]->setWeight(rValue, prevNeuron, currNeuron);
             }
-            this->layers[currLayer]->setBias(0, currNeuron);
+            layers[currLayer]->setBias(0, currNeuron);
         }
 
         currLayer++;
@@ -229,21 +229,21 @@ void NeuralNetwork::initializeReLU() {
 
 void NeuralNetwork::updateWeightsAndBiases(float* gradientVec) {
     unsigned int gradientSize = getGradientVecSize();
-    unsigned char currLayer = this->layers.size() - 1;
+    unsigned char currLayer = layers.size() - 1;
     unsigned int gradientCounter = 0;
 
     float val = 0;
     while (currLayer > 0) {
-        unsigned int currLayerSize = this->layers[currLayer]->getSize();
-        unsigned int prevLayerSize = this->layers[currLayer-1]->getSize();
+        unsigned int currLayerSize = layers[currLayer]->getSize();
+        unsigned int prevLayerSize = layers[currLayer-1]->getSize();
         
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                val = this->layers[currLayer]->getWeight(prevNeuron, currNeuron) - gradientVec[gradientCounter++];
-                this->layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
+                val = layers[currLayer]->getWeight(prevNeuron, currNeuron) - gradientVec[gradientCounter++];
+                layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
             }
-            val = this->layers[currLayer]->getBias(currNeuron) - gradientVec[gradientCounter++];
-            this->layers[currLayer]->setBias(val, currNeuron);
+            val = layers[currLayer]->getBias(currNeuron) - gradientVec[gradientCounter++];
+            layers[currLayer]->setBias(val, currNeuron);
         }
 
         currLayer--;
