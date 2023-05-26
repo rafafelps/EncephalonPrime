@@ -1,8 +1,12 @@
+#include <iostream>
+#include <iomanip>
+#include <thread>
 #include "Dataset.hpp"
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
-#include <iostream>
-#include <iomanip>
+
+int getImage(float* fInputData, Dataset* data);
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data);
 
 int main(int argc, char* argv[]) {
     Dataset data;
@@ -26,49 +30,44 @@ int main(int argc, char* argv[]) {
     mnist.initializeReLU();
     
     unsigned char inputData = 0;
-    float* fInputData = new float[784]();
+    float* fInputData = new float[inputSize]();
     int width = data.getWidth();
     int height = data.getHeight();
     int size = data.getSize();
 
     unsigned int gradientVecSize = mnist.getGradientVecSize();
+    
+    unsigned int threadCount = std::thread::hardware_concurrency();
+    //std::thread** threads = new std::thread*[threadCount];
 
-    for (int epoch = 0; epoch < 100; epoch++) {
-        data.getImages()->seekg(16);
-        data.getLabel()->seekg(8);
 
-        for (int times = 0; times < 60; times++) {
+
+    for (int epoch = 0; epoch < 1000; epoch++) {
+        data.getImages()->seekg(16 + (width * height));
+        data.getLabel()->seekg(9);
+
+        /*for (int thr = 0; thr < threadCount; thr++) {
+            
+        }*/
+
+        for (int image = 0; image < 1; image++) {
+            float* correctData = new float[outputSize]();
             float* gradientVec = new float[gradientVecSize]();
 
-            for (int image = 0; image < 1000; image++) {
-                float* correctData = new float[outputSize]();
+            correctData[getImage(fInputData, &data)]++;
 
-                for (int i = 0; i < height; i++) {
-                    for (int j = 0; j < width; j++) {
-                        data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
-                        fInputData[i * width + j] = inputData / 255;
-                    }
-                }
+            mnist.propagate(fInputData);
+            mnist.backPropagate(correctData, gradientVec);
+            mnist.updateWeightsAndBiases(0.001, gradientVec);
 
-                data.getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
-                correctData[inputData++];
-
-                mnist.propagate(fInputData);
-                mnist.backPropagate(correctData, gradientVec);
-
-                delete[] correctData;
-            }
-            
-            for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] /= 100000; }
-            mnist.updateWeightsAndBiases(gradientVec);
-
+            delete[] correctData;
             delete[] gradientVec;
         }
     }
     mnist.saveNetworkState();
 
-    data.getImages()->seekg(16);
-    data.getLabel()->seekg(8);
+    data.getImages()->seekg(16 + (width * height));
+    data.getLabel()->seekg(9);
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -101,4 +100,28 @@ int main(int argc, char* argv[]) {
     delete[] lastLayer;
     
     return 0;
+}
+
+int getImage(float* fInputData, Dataset* data) {
+    unsigned int width = data->getWidth();
+    unsigned int height = data->getHeight();
+
+    unsigned char inputData;
+
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            data->getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
+            fInputData[i * width + j] = inputData / 255;
+        }
+    }
+
+    data->getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
+    return inputData;
+}
+
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data) {
+    unsigned int startPos = partition * partitionSize;
+    data.getLabel()->seekg(8 + startPos);
+    data.getImages()->seekg(16 + (startPos * data.getWidth() * data.getHeight()));
+
 }
