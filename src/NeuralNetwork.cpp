@@ -66,7 +66,7 @@ unsigned int NeuralNetwork::getGradientVecSize() const {
 }
 
 float NeuralNetwork::getError(unsigned int correctResult) const {
-    return - log(layers[layers.size() - 1]->getNeuron(correctResult)->getValue());
+    return - log(layers[layers.size() - 1]->getNeuron(correctResult)->getValue() + 1e-8);
 }
 
 void NeuralNetwork::setDataset(Dataset* dataset) {
@@ -168,7 +168,9 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
 
         float dCdA;
         if (!correctData[currNeuron]) { dCdA = 0; }
-        else { dCdA = - (correctData[currNeuron] / layers[currLayer]->getNeuron(currNeuron)->getValue()); }
+        else {
+            dCdA = -1 / (layers[currLayer]->getNeuron(currNeuron)->getValue() + 1e-8);
+        }
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
             gradientVec[gradientCounter++] += dCdA * dSoftmax * layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
@@ -182,7 +184,7 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     while (currLayer > 0) {
         currLayerSize = layers[currLayer]->getSize();
         prevLayerSize = layers[currLayer-1]->getSize();
-        float nextLayerSize = layers[currLayer+1]->getSize();
+        unsigned int nextLayerSize = layers[currLayer+1]->getSize();
         
         for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
             float dCdA = 0;

@@ -16,6 +16,7 @@ public:
 
     float* getResults() const;
     unsigned int getGradientVecSize() const;
+    float getError(unsigned int correctResult) const;
     void setDataset(Dataset* dataset);
     void setName(std::string name);
 
