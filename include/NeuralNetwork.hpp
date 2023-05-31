@@ -16,12 +16,14 @@ public:
 
     float* getResults() const;
     unsigned int getGradientVecSize() const;
-    float getError(unsigned int correctResult) const;
+    float getCost(unsigned int correctResult) const;
     void setDataset(Dataset* dataset);
     void setName(std::string name);
 
     float ReLU(float val);
     float dReLU(float val);
+    float sigmoid(float val);
+    float dSigmoid(float val);
     void softmax(unsigned char layer);
 
     void propagate(float* inputData);

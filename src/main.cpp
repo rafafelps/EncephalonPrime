@@ -23,74 +23,66 @@ int main(int argc, char* argv[]) {
 
     unsigned int inputSize = 784;
     unsigned int outputSize = 10;
-    unsigned int sizes[4] = {inputSize, 16, 16, outputSize};
-    NeuralNetwork mnist(4, sizes);
+    unsigned int sizes[3] = {inputSize, 100, outputSize};
+    NeuralNetwork mnist(3, sizes);
     mnist.setDataset(&data);
     mnist.setName("mnist");
     mnist.initializeReLU();
     
-    unsigned char inputData = 0;
-    float* fInputData = new float[inputSize]();
+    int label = 0;
+    float* fInputData = new float[inputSize];
     int width = data.getWidth();
     int height = data.getHeight();
-    int size = data.getSize();
+    int dataSize = data.getSize();
 
-    unsigned int gradientVecSize = mnist.getGradientVecSize();
-    
-    unsigned int threadCount = std::thread::hardware_concurrency();
-    //std::thread** threads = new std::thread*[threadCount];
+    unsigned int gradientSize = mnist.getGradientVecSize();
+    float* gradientVec = new float[gradientSize]();
+    float* correctData = new float[outputSize]();
+    float error = 0;
 
+    unsigned int batchSize = 1;
+    unsigned int maxBatch = dataSize / batchSize;
 
+    //mnist.loadNetworkState();
+    for (int epoch = 0; epoch < 3; epoch++) {
+        data.getImages()->seekg(16);
+        data.getLabel()->seekg(8);
+        for (int batch = 0; batch < maxBatch; batch++) {
+            for (int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
 
-    for (int epoch = 0; epoch < 1000; epoch++) {
-        data.getImages()->seekg(16 + (width * height));
-        data.getLabel()->seekg(9);
+            for (int images = 0; images < batchSize; images++) {
+                label = getImage(fInputData, &data);
 
-        /*for (int thr = 0; thr < threadCount; thr++) {
-            
-        }*/
+                correctData[label]++;
 
-        for (int image = 0; image < 1; image++) {
-            float* correctData = new float[outputSize]();
-            float* gradientVec = new float[gradientVecSize]();
+                mnist.propagate(fInputData);
+                error += mnist.getCost(label);
+                mnist.backPropagate(correctData, gradientVec);
 
-            correctData[getImage(fInputData, &data)]++;
+                correctData[label]--;
+            }
 
-            mnist.propagate(fInputData);
-            mnist.backPropagate(correctData, gradientVec);
-            mnist.updateWeightsAndBiases(0.001, gradientVec);
+            for (int i = 0; i < gradientSize; i++) { gradientVec[i] /= batchSize; }
+            std::cout << "\rCost: " << error / batchSize << std::flush;
+            error = 0;
 
-            delete[] correctData;
-            delete[] gradientVec;
+            mnist.updateWeightsAndBiases(0.05, gradientVec);
         }
     }
     mnist.saveNetworkState();
 
-    data.getImages()->seekg(16 + (width * height));
-    data.getLabel()->seekg(9);
+    delete[] gradientVec;
+    delete[] correctData;
 
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
-            fInputData[i * width + j] = inputData / 255;
-        }
-    }
+    data.getImages()->seekg(16);
+    data.getLabel()->seekg(8);
 
-    data.getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
+    label = getImage(fInputData, &data);
     mnist.propagate(fInputData);
-
-    /*
-
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            data.getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
-            fInputData[i * width + j] = inputData / 255;
-        }
-    }*/
 
     float* lastLayer = mnist.getResults();
     for (int i = 0; i < outputSize; i++) {
-        if (inputData != i) {
+        if (label != i) {
             std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "%" << std::endl;
         } else {
             std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "% <-" << std::endl;

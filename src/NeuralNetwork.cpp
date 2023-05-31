@@ -46,7 +46,7 @@ float* NeuralNetwork::getResults() const {
     float* endVec = new float[layerSize];
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        endVec[currNeuron] = layers[currLayer]->getNeuron(currNeuron)->getValue();
+        endVec[currNeuron] = layers[currLayer]->getNeuron(currNeuron)->getActValue();
     }
 
     return endVec;
@@ -65,8 +65,8 @@ unsigned int NeuralNetwork::getGradientVecSize() const {
     return gradientSize;
 }
 
-float NeuralNetwork::getError(unsigned int correctResult) const {
-    return - log(layers[layers.size() - 1]->getNeuron(correctResult)->getValue() + 1e-8);
+float NeuralNetwork::getCost(unsigned int correctResult) const {
+    return - logf(layers[layers.size() - 1]->getNeuron(correctResult)->getActValue() + 1e-8);
 }
 
 void NeuralNetwork::setDataset(Dataset* dataset) {
@@ -85,6 +85,15 @@ float NeuralNetwork::dReLU(float val) {
     return (val > 0) ? 1 : 0;
 }
 
+float NeuralNetwork::sigmoid(float val) {
+    return 1 / (1 + expf(-val));
+}
+
+float NeuralNetwork::dSigmoid(float val) {
+    float sigVal = sigmoid(val);
+    return sigVal * (1 - sigVal);
+}
+
 void NeuralNetwork::softmax(unsigned char layer) {
     unsigned int layerSize = layers[layer]->getSize();
 
@@ -97,13 +106,13 @@ void NeuralNetwork::softmax(unsigned char layer) {
     float total = 0;
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
         float curVal = layers[layer]->getNeuron(currNeuron)->getValue();
-        layers[layer]->getNeuron(currNeuron)->setValue(curVal - highVal);
-        total += expf(layers[layer]->getNeuron(currNeuron)->getValue());
+        total += expf(curVal - highVal);
     }
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        float neuronVal = expf(layers[layer]->getNeuron(currNeuron)->getValue());
-        layers[layer]->getNeuron(currNeuron)->setValue(neuronVal / total);
+        float curVal = layers[layer]->getNeuron(currNeuron)->getValue();
+        float neuronVal = expf(curVal - highVal);
+        layers[layer]->getNeuron(currNeuron)->setActValue(neuronVal / total);
     }
 }
 
@@ -125,12 +134,13 @@ void NeuralNetwork::propagate(float* inputData) {
             float activationValue = 0;
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
+                activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getActValue() * 
                                    layers[currLayer]->getWeight(prevNeuron, currNeuron);
             }
 
             activationValue += layers[currLayer]->getBias(currNeuron);
-            layers[currLayer]->getNeuron(currNeuron)->setValue(ReLU(activationValue));
+            layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue);
+            layers[currLayer]->getNeuron(currNeuron)->setActValue(ReLU(activationValue));
         }
         currLayer++;
     }
@@ -142,14 +152,13 @@ void NeuralNetwork::propagate(float* inputData) {
         float activationValue = 0;
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getValue() * 
+            activationValue += layers[currLayer-1]->getNeuron(prevNeuron)->getActValue() * 
                                layers[currLayer]->getWeight(prevNeuron, currNeuron);
         }
 
         activationValue += layers[currLayer]->getBias(currNeuron);
         layers[currLayer]->getNeuron(currNeuron)->setValue(activationValue);
     }
-
     softmax(currLayer);
 }
 
@@ -163,21 +172,17 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     
     // Derivative of Cross-Entropy Loss (Multi-Class Classification)
     for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
-        float softmax = layers[currLayer]->getNeuron(currNeuron)->getValue();
-        float dSoftmax = softmax * (1 - softmax);
+        float softVal = layers[currLayer]->getNeuron(currNeuron)->getActValue();
+        float dAct = softVal * (1 - softVal);
 
-        float dCdA;
-        if (!correctData[currNeuron]) { dCdA = 0; }
-        else {
-            dCdA = -1 / (layers[currLayer]->getNeuron(currNeuron)->getValue() + 1e-8);
-        }
+        float dCdA = softVal - correctData[currNeuron];
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] += dCdA * dSoftmax * layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
+            gradientVec[gradientCounter++] += dCdA * dAct * layers[currLayer-1]->getNeuron(prevNeuron)->getActValue();
         }
 
-        gradientVec[gradientCounter++] += dCdA * dSoftmax;
-        deltas.push_back(dCdA * dSoftmax);
+        gradientVec[gradientCounter++] += dCdA * dAct;
+        deltas.push_back(dCdA * dAct);
     }
 
     currLayer--;
@@ -195,7 +200,7 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
             float dReLu = dReLU(layers[currLayer]->getNeuron(currNeuron)->getValue());
 
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-                gradientVec[gradientCounter++] += dCdA * dReLu * layers[currLayer-1]->getNeuron(prevNeuron)->getValue();
+                gradientVec[gradientCounter++] += dCdA * dReLu * layers[currLayer-1]->getNeuron(prevNeuron)->getActValue();
             }
 
             gradientVec[gradientCounter++] += dCdA * dReLu;
