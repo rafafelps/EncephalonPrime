@@ -25,7 +25,8 @@ NeuralNetwork::NeuralNetwork(std::string name) {
     netfile.close();
 }
 
-NeuralNetwork::NeuralNetwork(unsigned int layerAmount, unsigned int* sizes) {
+NeuralNetwork::NeuralNetwork(std::vector<unsigned int> sizes) {
+    unsigned int layerAmount = sizes.size();
     layers.push_back(new Layer(sizes[0], NULL));
     for (int layer = 1; layer < layerAmount; layer++) {
         layers.push_back(new Layer(sizes[layer], layers[layer-1]));

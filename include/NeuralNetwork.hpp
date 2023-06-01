@@ -11,7 +11,7 @@ private:
     std::string name;
 public:
     NeuralNetwork(std::string name);
-    NeuralNetwork(unsigned int layerAmount, unsigned int* sizes);
+    NeuralNetwork(std::vector<unsigned int> sizes);
     ~NeuralNetwork();
 
     float* getResults() const;

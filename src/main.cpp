@@ -7,15 +7,20 @@
 #include "libattopng.hpp"
 
 int getImage(float* fInputData, Dataset* data);
-float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data, NeuralNetwork net);
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset* data, NeuralNetwork* net);
 
 int main(int argc, char* argv[]) {
-    Dataset data;
+    unsigned int amountThreads = std::thread::hardware_concurrency() - 1;
+    Dataset* data = new Dataset[amountThreads];
     if (argc == 2) {
         if (!atoi(argv[1])) {
-            data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
+            for (int i = 0; i < amountThreads; i++) {
+                data[i].setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
+            }
         } else {
-            data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
+            for (int i = 0; i < amountThreads; i++) {
+                data[i].setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
+            }
         }
     } else {
         std::cout << "Usage: .\\build.exe [0|1] (0: training; 1: test)" << std::endl;
@@ -24,31 +29,39 @@ int main(int argc, char* argv[]) {
 
     unsigned int inputSize = 784;
     unsigned int outputSize = 10;
-    unsigned int sizes[3] = {inputSize, 100, outputSize};
-    NeuralNetwork mnist(3, sizes);
-    mnist.setDataset(&data);
-    mnist.setName("mnist");
-    mnist.initializeReLU();
+    std::vector<unsigned int> sizes;
+    sizes.push_back(inputSize);
+    sizes.push_back(16);
+    sizes.push_back(16);
+    sizes.push_back(outputSize);
+
+    std::vector<NeuralNetwork*> nets;
+    for (int i = 0; i < amountThreads; i++) {
+        nets.push_back(new NeuralNetwork(sizes));
+        nets[i]->setDataset(&data[i]);
+        nets[i]->setName("mnist");
+        nets[i]->initializeReLU();
+    }
     
     int label = 0;
     float* fInputData = new float[inputSize];
-    int width = data.getWidth();
-    int height = data.getHeight();
-    int dataSize = data.getSize();
 
-    unsigned int gradientSize = mnist.getGradientVecSize();
+    int width = data[0].getWidth();
+    int height = data[0].getHeight();
+    int dataSize = data[0].getSize();
+
+    unsigned int gradientSize = nets[0]->getGradientVecSize();
     float* gradientVec = new float[gradientSize]();
     float* correctData = new float[outputSize]();
     float error = 0;
 
-    unsigned int amountThreads = std::thread::hardware_concurrency() - 1;
     unsigned int partitionSize = dataSize / amountThreads;
     float** gradientList = new float*[amountThreads];
     std::future<float*>* future = new std::future<float*>[amountThreads];
 
-    for (int epoch = 0; epoch < 5; epoch++) {
+    for (int epoch = 0; epoch < 40; epoch++) {
         for (int i = 0; i < amountThreads; i++) {
-            future[i] = std::async(trainPartition, i, partitionSize, data, mnist);
+            future[i] = std::async(trainPartition, i, partitionSize, &data[i], nets[i]);
         }
 
         for (int i = 0; i < amountThreads; i++) {
@@ -68,21 +81,20 @@ int main(int argc, char* argv[]) {
                 gradientVec[i] = (deltaPartition / dataSize) * gradientList[j][i];
             }
         }
-        mnist.updateWeightsAndBiases(0.01, gradientVec);
+        nets[0]->updateWeightsAndBiases(0.05, gradientVec);
 
         for (int i = 0; i < amountThreads; i++) { delete[] gradientList[i]; }
     }
-    mnist.saveNetworkState();
-    delete[] future;
-    delete gradientList;
+    nets[0]->saveNetworkState();
 
-    data.getImages()->seekg(16);
-    data.getLabel()->seekg(8);
 
-    label = getImage(fInputData, &data);
-    mnist.propagate(fInputData);
+    data[0].getImages()->seekg(16);
+    data[0].getLabel()->seekg(8);
 
-    float* lastLayer = mnist.getResults();
+    label = getImage(fInputData, &data[0]);
+    nets[0]->propagate(fInputData);
+
+    float* lastLayer = nets[0]->getResults();
     for (int i = 0; i < outputSize; i++) {
         if (label != i) {
             std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "%" << std::endl;
@@ -91,7 +103,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    for (int i = 0; i < amountThreads; i++) {
+        delete nets[i];
+    }
     delete[] lastLayer;
+    delete[] data;
+    delete[] fInputData;
+    delete[] future;
+    delete gradientList;
     
     return 0;
 }
@@ -101,40 +120,38 @@ int getImage(float* fInputData, Dataset* data) {
     unsigned int height = data->getHeight();
 
     unsigned char inputData;
-
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             data->getImages()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
             fInputData[i * width + j] = inputData / 255;
         }
     }
-
     data->getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
     return inputData;
 }
 
-float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data, NeuralNetwork net) {
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset* data, NeuralNetwork* net) {
     unsigned int startPos = partition * partitionSize;
-    data.getLabel()->seekg(8 + startPos);
-    data.getImages()->seekg(16 + ((startPos - 1) * data.getWidth() * data.getHeight()));
+    data->getLabel()->seekg(8 + startPos);
+    data->getImages()->seekg(16 + (startPos * data->getWidth() * data->getHeight()));
 
-    unsigned int gradientVecSize = net.getGradientVecSize();
+    unsigned int gradientVecSize = net->getGradientVecSize();
     float* gradientVec = new float[gradientVecSize]();
-    float* fInputData = new float[data.getWidth() * data.getHeight()];
+    float* fInputData = new float[data->getWidth() * data->getHeight()];
     float* correctData = new float[gradientVecSize]();
     
     int dataSize = startPos + partitionSize;
-    if (startPos + (2 * partitionSize)) {
-        dataSize = data.getSize();
+    if (startPos + (2 * partitionSize) > data->getSize()) {
+        dataSize = data->getSize();
     }
     
     int amountRun = 0;
-    for (int i = startPos; i < dataSize; i++, amountRun++) {
-        int label = getImage(fInputData, &data);
+    for (int i = startPos; i < dataSize; i++, amountRun++) {        
+        int label = getImage(fInputData, data);
 
         correctData[label]++;
-        net.propagate(fInputData);
-        net.backPropagate(correctData, gradientVec);
+        net->propagate(fInputData);
+        net->backPropagate(correctData, gradientVec);
         correctData[label]--;
     }
 
