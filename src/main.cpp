@@ -1,12 +1,13 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
+#include <future>
 #include "Dataset.hpp"
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
 
 int getImage(float* fInputData, Dataset* data);
-float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data);
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data, NeuralNetwork net);
 
 int main(int argc, char* argv[]) {
     Dataset data;
@@ -40,39 +41,40 @@ int main(int argc, char* argv[]) {
     float* correctData = new float[outputSize]();
     float error = 0;
 
-    unsigned int batchSize = 1;
-    unsigned int maxBatch = dataSize / batchSize;
+    unsigned int amountThreads = std::thread::hardware_concurrency() - 1;
+    unsigned int partitionSize = dataSize / amountThreads;
+    float** gradientList = new float*[amountThreads];
+    std::future<float*>* future = new std::future<float*>[amountThreads];
 
-    //mnist.loadNetworkState();
-    for (int epoch = 0; epoch < 3; epoch++) {
-        data.getImages()->seekg(16);
-        data.getLabel()->seekg(8);
-        for (int batch = 0; batch < maxBatch; batch++) {
-            for (int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
-
-            for (int images = 0; images < batchSize; images++) {
-                label = getImage(fInputData, &data);
-
-                correctData[label]++;
-
-                mnist.propagate(fInputData);
-                error += mnist.getCost(label);
-                mnist.backPropagate(correctData, gradientVec);
-
-                correctData[label]--;
-            }
-
-            for (int i = 0; i < gradientSize; i++) { gradientVec[i] /= batchSize; }
-            std::cout << "\rCost: " << error / batchSize << std::flush;
-            error = 0;
-
-            mnist.updateWeightsAndBiases(0.05, gradientVec);
+    for (int epoch = 0; epoch < 5; epoch++) {
+        for (int i = 0; i < amountThreads; i++) {
+            future[i] = std::async(trainPartition, i, partitionSize, data, mnist);
         }
+
+        for (int i = 0; i < amountThreads; i++) {
+            gradientList[i] = future[i].get();
+        }
+
+        float* gradientVec = new float[gradientSize]();
+        for (int i = 0; i < gradientSize; i++) {
+            for (int j = 0; j < amountThreads; j++) {
+                unsigned int deltaPartition;
+                if (j == amountThreads - 1) {
+                    deltaPartition = j * partitionSize;
+                    deltaPartition = dataSize - 1 - deltaPartition;
+                } else {
+                    deltaPartition = partitionSize;
+                }
+                gradientVec[i] = (deltaPartition / dataSize) * gradientList[j][i];
+            }
+        }
+        mnist.updateWeightsAndBiases(0.01, gradientVec);
+
+        for (int i = 0; i < amountThreads; i++) { delete[] gradientList[i]; }
     }
     mnist.saveNetworkState();
-
-    delete[] gradientVec;
-    delete[] correctData;
+    delete[] future;
+    delete gradientList;
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);
@@ -111,9 +113,35 @@ int getImage(float* fInputData, Dataset* data) {
     return inputData;
 }
 
-float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data) {
+float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset data, NeuralNetwork net) {
     unsigned int startPos = partition * partitionSize;
     data.getLabel()->seekg(8 + startPos);
-    data.getImages()->seekg(16 + (startPos * data.getWidth() * data.getHeight()));
+    data.getImages()->seekg(16 + ((startPos - 1) * data.getWidth() * data.getHeight()));
 
+    unsigned int gradientVecSize = net.getGradientVecSize();
+    float* gradientVec = new float[gradientVecSize]();
+    float* fInputData = new float[data.getWidth() * data.getHeight()];
+    float* correctData = new float[gradientVecSize]();
+    
+    int dataSize = startPos + partitionSize;
+    if (startPos + (2 * partitionSize)) {
+        dataSize = data.getSize();
+    }
+    
+    int amountRun = 0;
+    for (int i = startPos; i < dataSize; i++, amountRun++) {
+        int label = getImage(fInputData, &data);
+
+        correctData[label]++;
+        net.propagate(fInputData);
+        net.backPropagate(correctData, gradientVec);
+        correctData[label]--;
+    }
+
+    for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] /= amountRun; }
+
+    delete[] correctData;
+    delete[] fInputData;
+
+    return gradientVec;
 }
