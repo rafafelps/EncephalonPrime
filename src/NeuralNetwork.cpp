@@ -225,7 +225,7 @@ void NeuralNetwork::initializeReLU() {
     while (currLayer < amountLayer) {
         int layerSize = layers[currLayer]->getSize();
         int prevLayerSize = layers[currLayer-1]->getSize();
-        float scaleFactor = sqrtf(2.f / prevLayerSize);
+        float scaleFactor = sqrtf(2.0 / prevLayerSize);
 
         for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
             for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
