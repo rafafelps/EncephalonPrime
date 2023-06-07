@@ -58,13 +58,12 @@ int main(int argc, char* argv[]) {
     unsigned int gradientSize = nets[0]->getGradientVecSize();
     float* gradientVec = new float[gradientSize]();
     float* correctData = new float[outputSize]();
-    float error = 0;
 
     unsigned int partitionSize = dataSize / amountThreads;
     float** gradientList = new float*[amountThreads];
     std::future<float*>* future = new std::future<float*>[amountThreads];
 
-    for (int epoch = 0; epoch < 1; epoch++) {
+    for (int epoch = 0; epoch < 5; epoch++) {
         for (int i = 0; i < amountThreads; i++) {
             future[i] = std::async(trainPartition, i, partitionSize, &data[i], nets[i]);
         }
@@ -73,26 +72,21 @@ int main(int argc, char* argv[]) {
             gradientList[i] = future[i].get();
         }
 
-        float* gradientVec = new float[gradientSize]();
         for (int i = 0; i < gradientSize; i++) {
-            for (int j = 0; j < amountThreads; j++) {
-                unsigned int deltaPartition;
-                if (j == amountThreads - 1) {
-                    deltaPartition = j * partitionSize;
-                    deltaPartition = dataSize - 1 - deltaPartition;
-                } else {
-                    deltaPartition = partitionSize;
-                }
-                gradientVec[i] = (deltaPartition / dataSize) * gradientList[j][i];
+            for (int j = 0; j < amountThreads - 1; j++) {
+                gradientVec[i] += (partitionSize / dataSize) * gradientList[j][i];
             }
+            gradientVec[i] += (dataSize - 1 - ((amountThreads - 1) * partitionSize)) / static_cast<float>(dataSize) * gradientList[amountThreads - 1][i];
         }
-        nets[0]->updateWeightsAndBiases(0.05, gradientVec);
-        nets[0]->saveNetworkState();
 
         for (int i = 0; i < amountThreads; i++) {
-            nets[i]->loadNetworkState();
+            nets[i]->updateWeightsAndBiases(0.05, gradientVec);
+            data[i].getImages()->seekg(16);
+            data[i].getLabel()->seekg(8);
             delete[] gradientList[i];
         }
+
+        for (int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
     }
     nets[0]->saveNetworkState();
 
@@ -119,6 +113,7 @@ int main(int argc, char* argv[]) {
     delete[] data;
     delete[] inputData;
     delete[] future;
+    delete[] gradientVec;
     delete gradientList;
     
     return 0;
@@ -135,7 +130,7 @@ int getImage(float* inputData, Dataset* data) {
             inputData[i * width + j] = tmp / 255;
         }
     }
-    data->getLabel()->read(reinterpret_cast<char*>(&inputData), sizeof(unsigned char));
+    data->getLabel()->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
     return tmp;
 }
 
