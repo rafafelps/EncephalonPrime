@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <string>
 
 class Dataset {
 private:
@@ -9,9 +10,12 @@ private:
 
     std::ifstream* label;
     std::ifstream* images;
+
+    std::string pathLabel;
+    std::string pathImages;
 public:
 
-    Dataset(const char* pathL, const char* pathI);
+    Dataset(std::string pathL, std::string pathI);
     Dataset();
     ~Dataset();
 
@@ -20,6 +24,8 @@ public:
     unsigned int getSize() const;
     std::ifstream* getImages() const;
     std::ifstream* getLabel() const;
+    std::string getPathLabel() const;
+    std::string getPathImages() const;
 
-    void setData(const char* pathL, const char* pathI);
+    void setData(std::string pathL, std::string pathI);
 };

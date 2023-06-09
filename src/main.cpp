@@ -11,15 +11,15 @@ float* trainPartition(unsigned int partition, unsigned int partitionSize, Datase
 
 int main(int argc, char* argv[]) {
     unsigned int amountThreads = std::thread::hardware_concurrency() - 1;
-    Dataset* data = new Dataset[amountThreads];
+    Dataset data;
     if (argc == 2) {
         if (!atoi(argv[1])) {
             for (int i = 0; i < amountThreads; i++) {
-                data[i].setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
+                data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
             }
         } else {
             for (int i = 0; i < amountThreads; i++) {
-                data[i].setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
+                data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
             }
         }
     } else {
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     std::vector<NeuralNetwork*> nets;
     for (int i = 0; i < amountThreads; i++) {
         nets.push_back(new NeuralNetwork(sizes));
-        nets[i]->setDataset(&data[i]);
+        nets[i]->setDataset(&data);
         nets[i]->setName("mnist");
         if (!i) {
             nets[i]->initializeReLU();
@@ -51,9 +51,9 @@ int main(int argc, char* argv[]) {
     int label = 0;
     float* inputData = new float[inputSize];
 
-    int width = data[0].getWidth();
-    int height = data[0].getHeight();
-    int dataSize = data[0].getSize();
+    int width = data.getWidth();
+    int height = data.getHeight();
+    int dataSize = data.getSize();
 
     unsigned int gradientSize = nets[0]->getGradientVecSize();
     float* gradientVec = new float[gradientSize]();
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
     for (int epoch = 0; epoch < 5; epoch++) {
         for (int i = 0; i < amountThreads; i++) {
-            future[i] = std::async(trainPartition, i, partitionSize, &data[i], nets[i]);
+            future[i] = std::async(trainPartition, i, partitionSize, &data, nets[i]);
         }
 
         for (int i = 0; i < amountThreads; i++) {
@@ -79,10 +79,11 @@ int main(int argc, char* argv[]) {
             gradientVec[i] += (dataSize - 1 - ((amountThreads - 1) * partitionSize)) / static_cast<float>(dataSize) * gradientList[amountThreads - 1][i];
         }
 
+        data.getImages()->seekg(16);
+        data.getLabel()->seekg(8);
+
         for (int i = 0; i < amountThreads; i++) {
             nets[i]->updateWeightsAndBiases(0.05, gradientVec);
-            data[i].getImages()->seekg(16);
-            data[i].getLabel()->seekg(8);
             delete[] gradientList[i];
         }
 
@@ -91,10 +92,10 @@ int main(int argc, char* argv[]) {
     nets[0]->saveNetworkState();
 
 
-    data[0].getImages()->seekg(16);
-    data[0].getLabel()->seekg(8);
+    data.getImages()->seekg(16);
+    data.getLabel()->seekg(8);
 
-    label = getImage(inputData, &data[0]);
+    label = getImage(inputData, &data);
     nets[0]->propagate(inputData);
 
     float* lastLayer = nets[0]->getResults();
@@ -110,7 +111,6 @@ int main(int argc, char* argv[]) {
         delete nets[i];
     }
     delete[] lastLayer;
-    delete[] data;
     delete[] inputData;
     delete[] future;
     delete[] gradientVec;
@@ -135,23 +135,25 @@ int getImage(float* inputData, Dataset* data) {
 }
 
 float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset* data, NeuralNetwork* net) {
+    Dataset* new_data = new Dataset(data->getPathLabel(), data->getPathImages());
+    
     unsigned int startPos = partition * partitionSize;
-    data->getLabel()->seekg(8 + startPos);
-    data->getImages()->seekg(16 + (startPos * data->getWidth() * data->getHeight()));
+    new_data->getLabel()->seekg(8 + startPos);
+    new_data->getImages()->seekg(16 + (startPos * new_data->getWidth() * new_data->getHeight()));
 
     unsigned int gradientVecSize = net->getGradientVecSize();
     float* gradientVec = new float[gradientVecSize]();
-    float* fInputData = new float[data->getWidth() * data->getHeight()];
+    float* fInputData = new float[new_data->getWidth() * new_data->getHeight()];
     float* correctData = new float[gradientVecSize]();
     
     int dataSize = startPos + partitionSize;
-    if (startPos + (2 * partitionSize) > data->getSize()) {
-        dataSize = data->getSize();
+    if (startPos + (2 * partitionSize) > new_data->getSize()) {
+        dataSize = new_data->getSize();
     }
     
     int amountRun = 0;
     for (int i = startPos; i < dataSize; i++, amountRun++) {        
-        int label = getImage(fInputData, data);
+        int label = getImage(fInputData, new_data);
 
         correctData[label]++;
         net->propagate(fInputData);
@@ -161,6 +163,7 @@ float* trainPartition(unsigned int partition, unsigned int partitionSize, Datase
 
     for (int i = 0; i < gradientVecSize; i++) { gradientVec[i] /= amountRun; }
 
+    delete new_data;
     delete[] correctData;
     delete[] fInputData;
 

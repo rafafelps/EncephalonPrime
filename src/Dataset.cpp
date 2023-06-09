@@ -2,11 +2,16 @@
 
 #define SWAP_INT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
-Dataset::Dataset(const char* pathL, const char* pathI) {
+Dataset::Dataset(std::string pathL, std::string pathI) {
+    label = nullptr;
+    images = nullptr;
     setData(pathL, pathI);
 }
 
-Dataset::Dataset() {}
+Dataset::Dataset() {
+    label = nullptr;
+    images = nullptr;
+}
 
 Dataset::~Dataset() {
     label->close();
@@ -17,28 +22,41 @@ Dataset::~Dataset() {
 }
 
 unsigned int Dataset::getWidth() const {
-    return this->width;
+    return width;
 }
 
 unsigned int Dataset::getHeight() const {
-    return this->height;
+    return height;
 }
 
 unsigned int Dataset::getSize() const {
-    return this->size;
+    return size;
 }
 
 std::ifstream* Dataset::getImages() const {
-    return this->images;
+    return images;
 }
 
 std::ifstream* Dataset::getLabel() const {
-    return this->label;
+    return label;
 }
 
-void Dataset::setData(const char* pathL, const char* pathI) {
+std::string Dataset::getPathLabel() const {
+    return pathLabel;
+}
+
+std::string Dataset::getPathImages() const {
+    return pathImages;
+}
+
+void Dataset::setData(std::string pathL, std::string pathI) {
+    if (label && images) { return; }
+
     unsigned int valueL = 0;
     unsigned int valueI = 0;
+
+    pathLabel = pathL;
+    pathImages = pathI;
 
     label = new std::ifstream(pathL, std::ios::binary);
     images = new std::ifstream(pathI, std::ios::binary);
