@@ -40,7 +40,25 @@ NeuralNetwork::NeuralNetwork(NeuralNetwork* originalNet) {
         layers.push_back(new Layer(originalNet->layers[layer]->getSize(), originalNet->layers[layer-1]));
     }
 
-    
+    int currLayer = 1;
+
+    while (currLayer < layerAmount) {
+        int currLayerSize = layers[currLayer]->getSize();
+
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            int prevLayerSize = layers[currLayer-1]->getSize();
+            
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                float val = originalNet->layers[currLayer]->getWeight(prevNeuron, currNeuron);
+                layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
+            }
+
+            float val = originalNet->layers[currLayer]->getBias(currNeuron);
+            layers[currLayer]->setBias(val, currNeuron);
+        }
+
+        currLayer++;
+    }
 }
 
 
