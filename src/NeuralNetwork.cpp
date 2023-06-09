@@ -33,6 +33,17 @@ NeuralNetwork::NeuralNetwork(std::vector<unsigned int> sizes) {
     }
 }
 
+NeuralNetwork::NeuralNetwork(NeuralNetwork* originalNet) {
+    unsigned int layerAmount = originalNet->layers.size();
+    layers.push_back(new Layer(originalNet->layers[0]->getSize(), NULL));
+    for (int layer = 1; layer < layerAmount; layer++) {
+        layers.push_back(new Layer(originalNet->layers[layer]->getSize(), originalNet->layers[layer-1]));
+    }
+
+    
+}
+
+
 NeuralNetwork::~NeuralNetwork() {
     unsigned char size = layers.size();
     for (int i = 0; i < size; i++) {
