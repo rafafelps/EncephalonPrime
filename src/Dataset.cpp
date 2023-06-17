@@ -50,7 +50,7 @@ std::string Dataset::getPathImages() const {
 }
 
 void Dataset::setData(std::string pathL, std::string pathI) {
-    if (label && images) { return; }
+    if (label || images) { return; }
 
     unsigned int valueL = 0;
     unsigned int valueI = 0;

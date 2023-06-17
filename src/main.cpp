@@ -14,13 +14,9 @@ int main(int argc, char* argv[]) {
     Dataset data;
     if (argc == 2) {
         if (!atoi(argv[1])) {
-            for (int i = 0; i < amountThreads; i++) {
-                data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
-            }
+            data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
         } else {
-            for (int i = 0; i < amountThreads; i++) {
-                data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
-            }
+            data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
         }
     } else {
         std::cout << "Usage: .\\build.exe [0|1] (0: training; 1: test)" << std::endl;
