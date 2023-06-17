@@ -152,7 +152,7 @@ void NeuralNetwork::propagate(float* inputData) {
     unsigned int layerSize = layers[currLayer]->getSize();
 
     for (int currNeuron = 0; currNeuron < layerSize; currNeuron++) {
-        layers[currLayer]->getNeuron(currNeuron)->setValue(inputData[currNeuron]);
+        layers[currLayer]->getNeuron(currNeuron)->setActValue(inputData[currNeuron]);
     }
     currLayer++;
 
