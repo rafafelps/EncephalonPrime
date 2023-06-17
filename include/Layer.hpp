@@ -4,7 +4,7 @@
 class Layer {
 private:
     Neuron* neuron;
-    float** weigth;
+    float** weight;
     float* bias;
     const unsigned int size;
 public:
