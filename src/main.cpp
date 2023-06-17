@@ -67,11 +67,12 @@ int main(int argc, char* argv[]) {
             gradientVec[i] += (dataSize - ((amountThreads - 1) * partitionSize)) / static_cast<float>(dataSize) * gradientList[amountThreads - 1][i];
         }
 
+        mnist.updateWeightsAndBiases(0.05, gradientVec);
+        
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
 
         for (int i = 0; i < amountThreads; i++) {
-            mnist.updateWeightsAndBiases(0.05, gradientVec);
             delete[] gradientList[i];
         }
 
