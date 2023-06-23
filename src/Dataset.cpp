@@ -19,6 +19,9 @@ Dataset::~Dataset() {
 
     delete label;
     delete images;
+
+    label = nullptr;
+    images = nullptr;
 }
 
 unsigned int Dataset::getWidth() const {

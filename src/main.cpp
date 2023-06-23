@@ -20,22 +20,23 @@ int main(int argc, char* argv[]) {
         }
     } else {
         std::cout << "Usage: .\\build.exe [0|1] (0: training; 1: test)" << std::endl;
-        exit(69420);
+        exit(1);
     }
+    if (!data.getLabel() || !data.getImages()) { std::cerr << "Failed to initialize data." << std::endl; exit(1); }
 
     unsigned int inputSize = 784;
     unsigned int outputSize = 10;
     std::vector<unsigned int> sizes;
     sizes.push_back(inputSize);
-    sizes.push_back(16);
-    sizes.push_back(16);
+    sizes.push_back(128);
+    sizes.push_back(32);
     sizes.push_back(outputSize);
 
     NeuralNetwork mnist(sizes);
     mnist.setDataset(&data);
     mnist.setName("mnist");
     mnist.initializeReLU();
-    
+
     int label = 0;
     float* inputData = new float[inputSize];
 
@@ -47,39 +48,37 @@ int main(int argc, char* argv[]) {
     float* gradientVec = new float[gradientSize]();
     float* correctData = new float[outputSize]();
 
-    unsigned int partitionSize = dataSize / amountThreads;
-    float** gradientList = new float*[amountThreads];
-    std::future<float*>* future = new std::future<float*>[amountThreads];
-
-    for (int epoch = 0; epoch < 5; epoch++) {
-        for (int i = 0; i < amountThreads; i++) {
-            future[i] = std::async(trainPartition, i, partitionSize, &data, &mnist);
-        }
-
-        for (int i = 0; i < amountThreads; i++) {
-            gradientList[i] = future[i].get();
-        }
-
-        for (int i = 0; i < gradientSize; i++) {
-            for (int j = 0; j < amountThreads - 1; j++) {
-                gradientVec[i] += (partitionSize / static_cast<float>(dataSize)) * gradientList[j][i];
-            }
-            gradientVec[i] += (dataSize - ((amountThreads - 1) * partitionSize)) / static_cast<float>(dataSize) * gradientList[amountThreads - 1][i];
-        }
-
-        mnist.updateWeightsAndBiases(0.05, gradientVec);
-        
+    for (unsigned int epoch = 0; epoch < 2; epoch++) {
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
+        unsigned int totalEval = 0;
+        unsigned int correctEval = 0;
 
-        for (int i = 0; i < amountThreads; i++) {
-            delete[] gradientList[i];
+        for (unsigned int image = 0; image < dataSize; image++) {
+            label = getImage(inputData, &data);
+            correctData[label]++;
+
+            mnist.propagate(inputData);
+            float* lastLayer = mnist.getResults();
+            unsigned int highVal = 0;
+            for (int i = 0; i < outputSize; i++) {
+                if (lastLayer[i] > lastLayer[highVal]) {
+                    highVal = i;
+                }
+            }
+            totalEval++;
+            if (highVal == label) { correctEval++; }
+            std::cout << "\rAccuracy: " << static_cast<float>(correctEval)/totalEval << std::flush;
+            delete[] lastLayer;
+
+            mnist.backPropagate(correctData, gradientVec);
+            mnist.updateWeightsAndBiases(0.05, gradientVec);
+            
+            correctData[label]--;
+            for (unsigned int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
         }
-
-        for (int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
     }
     mnist.saveNetworkState();
-
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);
@@ -98,9 +97,8 @@ int main(int argc, char* argv[]) {
 
     delete[] lastLayer;
     delete[] inputData;
-    delete[] future;
     delete[] gradientVec;
-    delete gradientList;
+    delete[] correctData;
     
     return 0;
 }
