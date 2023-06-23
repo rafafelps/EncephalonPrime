@@ -21,6 +21,7 @@ public:
     void setDataset(Dataset* dataset);
     void setName(std::string name);
 
+    void adam(unsigned int t, float* correctData, float* m, float* v, float alpha = 0.001, float beta1 = 0.9, float beta2 = 0.999, float epsilon = 1e-8);
     float ReLU(float val);
     float dReLU(float val);
     float sigmoid(float val);

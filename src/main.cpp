@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <thread>
 #include <future>
+#include <cmath>
 #include "Dataset.hpp"
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
@@ -28,8 +29,8 @@ int main(int argc, char* argv[]) {
     unsigned int outputSize = 10;
     std::vector<unsigned int> sizes;
     sizes.push_back(inputSize);
-    sizes.push_back(128);
-    sizes.push_back(32);
+    sizes.push_back(400);
+    sizes.push_back(400);
     sizes.push_back(outputSize);
 
     NeuralNetwork mnist(sizes);
@@ -48,17 +49,23 @@ int main(int argc, char* argv[]) {
     float* gradientVec = new float[gradientSize]();
     float* correctData = new float[outputSize]();
 
-    for (unsigned int epoch = 0; epoch < 2; epoch++) {
+    unsigned int t = 0;
+    float* m = new float[gradientSize]();
+    float* v = new float[gradientSize]();
+    for (unsigned int epoch = 0; epoch < 1; epoch++) {
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
         unsigned int totalEval = 0;
         unsigned int correctEval = 0;
 
         for (unsigned int image = 0; image < dataSize; image++) {
+            t++;
             label = getImage(inputData, &data);
             correctData[label]++;
 
             mnist.propagate(inputData);
+            mnist.adam(t, correctData, m, v);
+
             float* lastLayer = mnist.getResults();
             unsigned int highVal = 0;
             for (int i = 0; i < outputSize; i++) {
@@ -66,19 +73,17 @@ int main(int argc, char* argv[]) {
                     highVal = i;
                 }
             }
-            totalEval++;
             if (highVal == label) { correctEval++; }
-            std::cout << "\rAccuracy: " << static_cast<float>(correctEval)/totalEval << std::flush;
-            delete[] lastLayer;
+            totalEval++;
 
-            mnist.backPropagate(correctData, gradientVec);
-            mnist.updateWeightsAndBiases(0.05, gradientVec);
-            
+            std::cout << "\rAccuracy: " << static_cast<float>(correctEval) / totalEval << std::flush;
+
             correctData[label]--;
-            for (unsigned int i = 0; i < gradientSize; i++) { gradientVec[i] = 0; }
         }
     }
     mnist.saveNetworkState();
+
+    std::cout << std::endl;
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);

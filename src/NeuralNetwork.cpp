@@ -107,6 +107,48 @@ void NeuralNetwork::setName(std::string name) {
     this->name = name;
 }
 
+void NeuralNetwork::adam(unsigned int t, float* correctData, float* m, float* v, float alpha, float beta1, float beta2, float epsilon) {
+    unsigned int gradVecSize = getGradientVecSize();
+    float* gradientVec = new float[gradVecSize]();
+    backPropagate(correctData, gradientVec);
+
+    float* mhat = new float[gradVecSize];
+    float* vhat = new float[gradVecSize];
+
+    for (int i = 0; i < gradVecSize; i++) {
+        m[i] = beta1 * m[i] + (1 - beta1) * gradientVec[i];
+        v[i] = beta2 * v[i] + (1 - beta2) * (gradientVec[i] * gradientVec[i]);
+        mhat[i] = m[i] / (1 - powf(beta1, t));
+        vhat[i] = v[i] / (1 - powf(beta2, t));
+    }
+
+    unsigned char currLayer = layers.size() - 1;
+    unsigned int gradientCounter = 0;
+
+    float val = 0;
+    while (currLayer > 0) {
+        unsigned int currLayerSize = layers[currLayer]->getSize();
+        unsigned int prevLayerSize = layers[currLayer-1]->getSize();
+        
+        for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
+            for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
+                val = layers[currLayer]->getWeight(prevNeuron, currNeuron) - alpha * (mhat[gradientCounter] / (sqrtf(vhat[gradientCounter]) + epsilon));
+                layers[currLayer]->setWeight(val, prevNeuron, currNeuron);
+                gradientCounter++;
+            }
+            val = layers[currLayer]->getBias(currNeuron) - alpha * (mhat[gradientCounter] / (sqrtf(vhat[gradientCounter]) + epsilon));
+            layers[currLayer]->setBias(val, currNeuron);
+            gradientCounter++;
+        }
+
+        currLayer--;
+    }
+
+    delete[] gradientVec;
+    delete[] mhat;
+    delete[] vhat;
+}
+
 float NeuralNetwork::ReLU(float val) {
     return (val > 0) ? val : 0;
 }
