@@ -5,12 +5,14 @@
 Dataset::Dataset(std::string pathL, std::string pathI) {
     label = nullptr;
     images = nullptr;
+    img = nullptr;
     setData(pathL, pathI);
 }
 
 Dataset::Dataset() {
     label = nullptr;
     images = nullptr;
+    img = nullptr;
 }
 
 Dataset::~Dataset() {
@@ -19,6 +21,7 @@ Dataset::~Dataset() {
 
     delete label;
     delete images;
+    delete[] img;
 
     label = nullptr;
     images = nullptr;
@@ -84,4 +87,21 @@ void Dataset::setData(std::string pathL, std::string pathI) {
     images->read((char*)&valueI, 4);
     valueI = SWAP_INT32(valueI);
     this->width = valueI;
+
+    images->seekg(16);
+    label->seekg(8);
+    img = new Image[size];
+    for (int k = 0; k < size; k++) {
+        img[k] = Image(width*height);
+        
+        unsigned char tmp;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                images->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
+                img[k].values[i * width + j] = tmp / 255;
+            }
+        }
+        label->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
+        img[k].label = tmp;
+    }
 }

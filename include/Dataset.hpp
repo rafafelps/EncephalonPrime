@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <string>
+#include "Image.hpp"
 
 class Dataset {
 private:
@@ -13,7 +14,9 @@ private:
 
     std::string pathLabel;
     std::string pathImages;
+
 public:
+    Image* img;
 
     Dataset(std::string pathL, std::string pathI);
     Dataset();

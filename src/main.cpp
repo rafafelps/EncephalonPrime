@@ -1,8 +1,8 @@
 #include <iostream>
 #include <iomanip>
-#include <thread>
-#include <future>
 #include <cmath>
+#include <random>
+#include <algorithm>
 #include "Dataset.hpp"
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
@@ -11,7 +11,6 @@ int getImage(float* inputData, Dataset* data);
 float* trainPartition(unsigned int partition, unsigned int partitionSize, Dataset* data, NeuralNetwork* net);
 
 int main(int argc, char* argv[]) {
-    unsigned int amountThreads = std::thread::hardware_concurrency() - 1;
     Dataset data;
     if (argc == 2) {
         if (!atoi(argv[1])) {
@@ -29,8 +28,8 @@ int main(int argc, char* argv[]) {
     unsigned int outputSize = 10;
     std::vector<unsigned int> sizes;
     sizes.push_back(inputSize);
-    sizes.push_back(400);
-    sizes.push_back(400);
+    sizes.push_back(16);
+    sizes.push_back(16);
     sizes.push_back(outputSize);
 
     NeuralNetwork mnist(sizes);
@@ -45,6 +44,12 @@ int main(int argc, char* argv[]) {
     int height = data.getHeight();
     int dataSize = data.getSize();
 
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::vector<unsigned int> imageOrder;
+    for (int i = 0; i < dataSize; i++) { imageOrder.push_back(i); }
+    std::shuffle(imageOrder.begin(), imageOrder.end(), g);
+
     unsigned int gradientSize = mnist.getGradientVecSize();
     float* gradientVec = new float[gradientSize]();
     float* correctData = new float[outputSize]();
@@ -55,15 +60,16 @@ int main(int argc, char* argv[]) {
     for (unsigned int epoch = 0; epoch < 1; epoch++) {
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
+        std::shuffle(imageOrder.begin(), imageOrder.end(), g);
         unsigned int totalEval = 0;
         unsigned int correctEval = 0;
 
         for (unsigned int image = 0; image < dataSize; image++) {
             t++;
-            label = getImage(inputData, &data);
+            label = data.img[imageOrder[image]].label;
             correctData[label]++;
 
-            mnist.propagate(inputData);
+            mnist.propagate(data.img[imageOrder[image]].values);
             mnist.adam(t, correctData, m, v);
 
             float* lastLayer = mnist.getResults();
