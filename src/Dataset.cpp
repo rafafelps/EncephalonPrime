@@ -1,33 +1,32 @@
+#include <fstream>
 #include "Dataset.hpp"
 
 #define SWAP_INT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
 Dataset::Dataset(std::string pathL, std::string pathI) {
-    label = nullptr;
-    images = nullptr;
+    width = 0;
+    height = 0;
+    size = 0;
     img = nullptr;
     setData(pathL, pathI);
 }
 
 Dataset::Dataset() {
-    label = nullptr;
-    images = nullptr;
+    width = 0;
+    height = 0;
+    size = 0;
     img = nullptr;
 }
 
 Dataset::~Dataset() {
-    label->close();
-    images->close();
-
-    delete label;
-    delete images;
     for (int i = 0; i < size; i++) {
         delete img[i];
     }
     delete[] img;
 
-    label = nullptr;
-    images = nullptr;
+    width = 0;
+    height = 0;
+    size = 0;
     img = nullptr;
 }
 
@@ -43,52 +42,33 @@ unsigned int Dataset::getSize() const {
     return size;
 }
 
-std::ifstream* Dataset::getImages() const {
-    return images;
-}
-
-std::ifstream* Dataset::getLabel() const {
-    return label;
-}
-
-std::string Dataset::getPathLabel() const {
-    return pathLabel;
-}
-
-std::string Dataset::getPathImages() const {
-    return pathImages;
-}
-
 void Dataset::setData(std::string pathL, std::string pathI) {
-    if (label || images) { return; }
+    if (size || width || height) { return; }
 
     unsigned int valueL = 0;
     unsigned int valueI = 0;
 
-    pathLabel = pathL;
-    pathImages = pathI;
+    std::ifstream* label = new std::ifstream(pathL, std::ios::binary);
+    std::ifstream* images = new std::ifstream(pathI, std::ios::binary);
 
-    label = new std::ifstream(pathL, std::ios::binary);
-    images = new std::ifstream(pathI, std::ios::binary);
-
-    label->read((char*)&valueL, 4);
-    images->read((char*)&valueI, 4);
+    label->read(reinterpret_cast<char*>(&valueL), 4);
+    images->read(reinterpret_cast<char*>(&valueI), 4);
     valueL = SWAP_INT32(valueL);
     valueI = SWAP_INT32(valueI);
     if (valueL != 2049 || valueI != 2051) { this->~Dataset(); return; }
 
-    label->read((char*)&valueL, 4);
-    images->read((char*)&valueI, 4);
+    label->read(reinterpret_cast<char*>(&valueL), 4);
+    images->read(reinterpret_cast<char*>(&valueI), 4);
     valueL = SWAP_INT32(valueL);
     valueI = SWAP_INT32(valueI);
     if (valueL != valueI) { this->~Dataset(); return; }
     this->size = valueL;
 
-    images->read((char*)&valueI, 4);
+    images->read(reinterpret_cast<char*>(&valueI), 4);
     valueI = SWAP_INT32(valueI);;
     this->height = valueI;
 
-    images->read((char*)&valueI, 4);
+    images->read(reinterpret_cast<char*>(&valueI), 4);
     valueI = SWAP_INT32(valueI);
     this->width = valueI;
 
@@ -105,7 +85,13 @@ void Dataset::setData(std::string pathL, std::string pathI) {
                 img[k]->values[i * width + j] = tmp / static_cast<float>(255);
             }
         }
+
         label->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
         img[k]->label = tmp;
     }
+
+    label->close();
+    images->close();
+    delete label;
+    delete images;
 }

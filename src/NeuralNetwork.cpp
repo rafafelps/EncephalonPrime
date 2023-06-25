@@ -1,7 +1,10 @@
 #include <ctime>
 #include <cmath>
-#include <queue>
 #include <random>
+#include <fstream>
+#include <algorithm>
+#include <iostream>
+#include <limits>
 #include "NeuralNetwork.hpp"
 
 NeuralNetwork::NeuralNetwork(std::string name) {
@@ -188,6 +191,76 @@ void NeuralNetwork::softmax(unsigned char layer) {
     }
 }
 
+void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
+    loadFromFile ? loadNetworkState() : kaimingInitialization();
+
+    std::random_device rd{};
+    std::mt19937 gen(rd());
+    gen.seed(0);
+
+    unsigned int dataSize = dataset->getSize();
+    std::vector<unsigned int> imageOrder;
+    for (int i = 0; i < dataSize; i++) { imageOrder.push_back(i); }
+
+    unsigned int outputSize = layers[layers.size()-1]->getSize();
+    unsigned int gradientSize = getGradientVecSize();
+    float* m = new float[gradientSize]();
+    float* v = new float[gradientSize]();
+
+    unsigned int t = 0;
+    float highAcc = 0;
+    for (unsigned int epoch = 0; epoch < epochs; epoch++) {
+        unsigned int totalEval = 0;
+        unsigned int correctEval = 0;
+        unsigned int label;
+        float* correctData = new float[outputSize]();
+        std::shuffle(imageOrder.begin(), imageOrder.end(), gen);
+
+        for (unsigned int image = 0; image < dataSize; image++) {
+            t++;
+            label = dataset->img[imageOrder[image]]->label;
+            correctData[label]++;
+
+            propagate(dataset->img[imageOrder[image]]->values);
+            adam(t, correctData, m, v);
+
+            float* lastLayer = getResults();
+            unsigned int highVal = 0;
+            for (int i = 0; i < outputSize; i++) {
+                if (lastLayer[i] > lastLayer[highVal]) {
+                    highVal = i;
+                }
+            }
+            if (highVal == label) { correctEval++; }
+            totalEval++;
+
+            float acc = static_cast<float>(correctEval) / totalEval;
+            if (acc > highAcc) { highAcc = acc; }
+            else {
+                float change = highAcc / (acc + std::numeric_limits<float>::min());
+                if (image > 10000 && change > 1.0 && change < 1.002) {
+                    saveNetworkState();
+                }
+            }
+            /*if (acc >= 0.84) {
+                saveNetworkState();
+                std::cout << std::endl << "Finished learning!" << std::endl;
+                break;
+            }*/
+
+            std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
+
+            correctData[label]--;
+        }
+
+        delete[] correctData;
+    }
+    saveNetworkState();
+    
+    delete[] m;
+    delete[] v;
+}
+
 void NeuralNetwork::propagate(float* inputData) {
     unsigned char currLayer = 0;
     unsigned char amountLayers = layers.size() - 1;
@@ -284,10 +357,10 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     }
 }
 
-void NeuralNetwork::initializeReLU() {
+void NeuralNetwork::kaimingInitialization() {
     std::random_device rd{};
     std::mt19937 gen{rd()};
-    gen.seed(time(NULL));
+    gen.seed(0);
     std::normal_distribution<float> d{0, 1};
 
     unsigned char currLayer = 1;

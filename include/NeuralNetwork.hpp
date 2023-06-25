@@ -28,9 +28,10 @@ public:
     float dSigmoid(float val);
     void softmax(unsigned char layer);
 
+    void learn(unsigned int epochs, bool loadFromFile);
     void propagate(float* inputData);
     void backPropagate(float* correctData, float* gradientVec);
-    void initializeReLU();
+    void kaimingInitialization();
     void updateWeightsAndBiases(float learningRate, float* gradientVec);
     void saveNetworkState();
     void loadNetworkState();
