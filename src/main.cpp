@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     NeuralNetwork mnist(sizes);
     mnist.setDataset(&data);
     mnist.setName("mnist");
-    mnist.initializeReLU();
+    mnist.loadNetworkState();
 
     int label = 0;
     float* inputData = new float[inputSize];
@@ -44,11 +44,11 @@ int main(int argc, char* argv[]) {
     int height = data.getHeight();
     int dataSize = data.getSize();
 
-    std::random_device rd;
-    std::mt19937 g(rd());
+    std::random_device rd{};
+    std::mt19937 gen(rd());
+    gen.seed(time(NULL));
     std::vector<unsigned int> imageOrder;
     for (int i = 0; i < dataSize; i++) { imageOrder.push_back(i); }
-    std::shuffle(imageOrder.begin(), imageOrder.end(), g);
 
     unsigned int gradientSize = mnist.getGradientVecSize();
     float* gradientVec = new float[gradientSize]();
@@ -57,19 +57,19 @@ int main(int argc, char* argv[]) {
     unsigned int t = 0;
     float* m = new float[gradientSize]();
     float* v = new float[gradientSize]();
-    for (unsigned int epoch = 0; epoch < 1; epoch++) {
+    /*for (unsigned int epoch = 0; epoch < 1; epoch++) {
         data.getImages()->seekg(16);
         data.getLabel()->seekg(8);
-        std::shuffle(imageOrder.begin(), imageOrder.end(), g);
+        std::shuffle(imageOrder.begin(), imageOrder.end(), gen);
         unsigned int totalEval = 0;
         unsigned int correctEval = 0;
 
         for (unsigned int image = 0; image < dataSize; image++) {
             t++;
-            label = data.img[imageOrder[image]].label;
+            label = data.img[imageOrder[image]]->label;
             correctData[label]++;
 
-            mnist.propagate(data.img[imageOrder[image]].values);
+            mnist.propagate(data.img[imageOrder[image]]->values);
             mnist.adam(t, correctData, m, v);
 
             float* lastLayer = mnist.getResults();
@@ -82,20 +82,35 @@ int main(int argc, char* argv[]) {
             if (highVal == label) { correctEval++; }
             totalEval++;
 
-            std::cout << "\rAccuracy: " << static_cast<float>(correctEval) / totalEval << std::flush;
+            float acc = static_cast<float>(correctEval) / totalEval;
+            if (acc >= 0.84) {
+                mnist.saveNetworkState();
+                std::cout << std::endl << "Finished learning!" << std::endl;
+                return 0;
+            }
+
+            std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
 
             correctData[label]--;
         }
     }
-    mnist.saveNetworkState();
-
-    std::cout << std::endl;
+    mnist.saveNetworkState();*/
 
     data.getImages()->seekg(16);
     data.getLabel()->seekg(8);
 
-    label = getImage(inputData, &data);
-    mnist.propagate(inputData);
+    unsigned int pos = 0;
+    label = data.img[pos]->label;
+    mnist.propagate(data.img[pos]->values);
+
+    libattopng_t* png = libattopng_new(width, height, PNG_GRAYSCALE);
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            libattopng_put_pixel(png, data.img[pos]->values[i * width + j] * 255);
+        }
+    }
+    libattopng_save(png, "images/result.png");
+    libattopng_destroy(png);
 
     float* lastLayer = mnist.getResults();
     for (int i = 0; i < outputSize; i++) {
@@ -110,6 +125,8 @@ int main(int argc, char* argv[]) {
     delete[] inputData;
     delete[] gradientVec;
     delete[] correctData;
+    delete[] m;
+    delete[] v;
     
     return 0;
 }

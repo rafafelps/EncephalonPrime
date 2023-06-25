@@ -16,7 +16,7 @@ private:
     std::string pathImages;
 
 public:
-    Image* img;
+    Image** img;
 
     Dataset(std::string pathL, std::string pathI);
     Dataset();

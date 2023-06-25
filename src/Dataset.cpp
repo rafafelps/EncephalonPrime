@@ -21,10 +21,14 @@ Dataset::~Dataset() {
 
     delete label;
     delete images;
+    for (int i = 0; i < size; i++) {
+        delete img[i];
+    }
     delete[] img;
 
     label = nullptr;
     images = nullptr;
+    img = nullptr;
 }
 
 unsigned int Dataset::getWidth() const {
@@ -90,18 +94,18 @@ void Dataset::setData(std::string pathL, std::string pathI) {
 
     images->seekg(16);
     label->seekg(8);
-    img = new Image[size];
+    img = new Image*[size];
     for (int k = 0; k < size; k++) {
-        img[k] = Image(width*height);
+        img[k] = new Image(width*height);
         
         unsigned char tmp;
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 images->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
-                img[k].values[i * width + j] = tmp / 255;
+                img[k]->values[i * width + j] = tmp / static_cast<float>(255);
             }
         }
         label->read(reinterpret_cast<char*>(&tmp), sizeof(unsigned char));
-        img[k].label = tmp;
+        img[k]->label = tmp;
     }
 }
