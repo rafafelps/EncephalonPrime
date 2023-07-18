@@ -223,7 +223,7 @@ void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
             propagate(dataset->img[imageOrder[image]]->values);
             adam(t, correctData, m, v);
 
-            float* lastLayer = getResults();
+            /*float* lastLayer = getResults();
             unsigned int highVal = 0;
             for (int i = 0; i < outputSize; i++) {
                 if (lastLayer[i] > lastLayer[highVal]) {
@@ -234,8 +234,8 @@ void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
             totalEval++;
 
             float acc = static_cast<float>(correctEval) / totalEval;
-            //std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
-
+            std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
+            */
             correctData[label]--;
         }
 
