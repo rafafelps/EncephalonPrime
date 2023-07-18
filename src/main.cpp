@@ -8,18 +8,12 @@
 #include "libattopng.hpp"
 
 int main(int argc, char* argv[]) {
-    Dataset data;
-    if (argc == 2) {
-        if (!atoi(argv[1])) {
-            data.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
-        } else {
-            data.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
-        }
-    } else {
-        std::cout << "Usage: .\\build.exe [0|1] (0: training; 1: test)" << std::endl;
-        exit(1);
-    }
-    if (!data.getHeight() || !data.getWidth() || !data.getSize()) { std::cerr << "Failed to initialize data." << std::endl; exit(1); }
+    Dataset trainingData;
+    Dataset testData;
+    trainingData.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
+    testData.setData("dataset/test/t10k-labels.idx1-ubyte", "dataset/test/t10k-images.idx3-ubyte");
+    if (!trainingData.getHeight() || !trainingData.getWidth() || !trainingData.getSize() ||
+        !testData.getHeight() || !testData.getWidth() || !testData.getSize()) { std::cerr << "Failed to initialize data." << std::endl; exit(1); }
 
     unsigned int inputSize = 784;
     unsigned int outputSize = 10;
@@ -30,13 +24,55 @@ int main(int argc, char* argv[]) {
     sizes.push_back(outputSize);
 
     NeuralNetwork mnist(sizes);
-    mnist.setDataset(&data);
     mnist.setName("mnist");
 
-    //mnist.learn(1, false);
-    mnist.loadNetworkState();
+    if (atoi(argv[1])) {
+        mnist.setDataset(&testData);
+        mnist.loadNetworkState();
+    } else {
+        mnist.setDataset(&trainingData);
+        mnist.learn(1, false);
+    }
 
-    unsigned int pos = 0;
+    unsigned int dataSize = testData.getSize();
+    unsigned int correctPredictions = 0;
+    for (unsigned int image = 0; image < dataSize; image++) {
+        unsigned int label = testData.img[image]->label;
+        mnist.propagate(testData.img[image]->values);
+
+        float* lastLayer = mnist.getResults();
+        unsigned int highVal = 0;
+        for (unsigned int i = 0; i < outputSize; i++) {
+            if (lastLayer[i] > lastLayer[highVal]) { highVal = i; }
+        }
+
+        if (label != highVal) {
+            continue;
+            unsigned int width = testData.getWidth();
+            unsigned int height = testData.getHeight();
+            libattopng_t* png = libattopng_new(width, height, PNG_GRAYSCALE);
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < width; j++) {
+                    libattopng_put_pixel(png, testData.img[image]->values[i * width + j] * 255);
+                }
+            }
+            for (int i = 0; i < outputSize; i++) {
+                if (label != i) {
+                    std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "%" << std::endl;
+                } else {
+                    std::cout << std::fixed << std::setprecision(3) << i << ": " << lastLayer[i] * 100 << "% <-" << std::endl;
+                }
+            }
+            libattopng_save(png, "images/result.png");
+            libattopng_destroy(png);
+        } else { correctPredictions++; }
+
+        delete[] lastLayer;
+    }
+
+    std::cout << std::endl << "Accuracy: " << correctPredictions / static_cast<float>(dataSize) << std::endl;
+
+    /*unsigned int pos = 3;
     unsigned int label = data.img[pos]->label;
     mnist.propagate(data.img[pos]->values);
 
@@ -60,7 +96,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    delete[] lastLayer;
+    delete[] lastLayer;*/
     
     return 0;
 }

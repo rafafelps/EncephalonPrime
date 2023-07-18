@@ -196,7 +196,7 @@ void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
 
     std::random_device rd{};
     std::mt19937 gen(rd());
-    gen.seed(0);
+    gen.seed(time(NULL));
 
     unsigned int dataSize = dataset->getSize();
     std::vector<unsigned int> imageOrder;
@@ -208,7 +208,6 @@ void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
     float* v = new float[gradientSize]();
 
     unsigned int t = 0;
-    float highAcc = 0;
     for (unsigned int epoch = 0; epoch < epochs; epoch++) {
         unsigned int totalEval = 0;
         unsigned int correctEval = 0;
@@ -235,20 +234,7 @@ void NeuralNetwork::learn(unsigned int epochs, bool loadFromFile) {
             totalEval++;
 
             float acc = static_cast<float>(correctEval) / totalEval;
-            if (acc > highAcc) { highAcc = acc; }
-            else {
-                float change = highAcc / (acc + std::numeric_limits<float>::min());
-                if (image > 10000 && change > 1.0 && change < 1.002) {
-                    saveNetworkState();
-                }
-            }
-            /*if (acc >= 0.84) {
-                saveNetworkState();
-                std::cout << std::endl << "Finished learning!" << std::endl;
-                break;
-            }*/
-
-            std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
+            //std::cout << "\rImage: " << image << "  Accuracy: " << acc << std::flush;
 
             correctData[label]--;
         }
@@ -317,17 +303,14 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
     
     // Derivative of Cross-Entropy Loss (Multi-Class Classification)
     for (int currNeuron = 0; currNeuron < currLayerSize; currNeuron++) {
-        float softVal = layers[currLayer]->getNeuron(currNeuron)->getActValue();
-        float dAct = softVal * (1 - softVal);
-
-        float dCdA = softVal - correctData[currNeuron];
+        float dCdZ = layers[currLayer]->getNeuron(currNeuron)->getActValue() - correctData[currNeuron];
 
         for (int prevNeuron = 0; prevNeuron < prevLayerSize; prevNeuron++) {
-            gradientVec[gradientCounter++] += dCdA * dAct * layers[currLayer-1]->getNeuron(prevNeuron)->getActValue();
+            gradientVec[gradientCounter++] += dCdZ * layers[currLayer-1]->getNeuron(prevNeuron)->getActValue();
         }
 
-        gradientVec[gradientCounter++] += dCdA * dAct;
-        deltas.push_back(dCdA * dAct);
+        gradientVec[gradientCounter++] += dCdZ;
+        deltas.push_back(dCdZ);
     }
 
     currLayer--;
@@ -360,7 +343,7 @@ void NeuralNetwork::backPropagate(float* correctData, float* gradientVec) {
 void NeuralNetwork::kaimingInitialization() {
     std::random_device rd{};
     std::mt19937 gen{rd()};
-    gen.seed(0);
+    gen.seed(time(NULL));
     std::normal_distribution<float> d{0, 1};
 
     unsigned char currLayer = 1;
