@@ -7,7 +7,17 @@
 #include "NeuralNetwork.hpp"
 #include "libattopng.hpp"
 
+float accuracyFinder(int argc, char* argv[]);
+
 int main(int argc, char* argv[]) {
+    while (!accuracyFinder(argc, argv)) {
+
+    }
+
+    return 0;
+}
+
+float accuracyFinder(int argc, char* argv[]) {
     Dataset trainingData;
     Dataset testData;
     trainingData.setData("dataset/training/train-labels.idx1-ubyte", "dataset/training/train-images.idx3-ubyte");
@@ -56,6 +66,6 @@ int main(int argc, char* argv[]) {
 
     if (acc > atof(argv[2])) {
         std::cout << "Higher accuracy found!" << std::endl;
-        return 0;
-    }
+        return acc;
+    } else { return 0; }
 }
