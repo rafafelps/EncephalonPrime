@@ -10,7 +10,7 @@ private:
     std::vector<Layer*> layers;
     std::string name;
 public:
-    NeuralNetwork(std::string name);
+    NeuralNetwork();
     NeuralNetwork(std::vector<unsigned int> sizes);
     NeuralNetwork(NeuralNetwork* originalNet);
     ~NeuralNetwork();
@@ -20,6 +20,7 @@ public:
     float getCost(unsigned int correctResult) const;
     void setDataset(Dataset* dataset);
     void setName(std::string name);
+    void setStructure(std::vector<unsigned int> sizes);
 
     void adam(unsigned int t, float* correctData, float* m, float* v, float alpha = 0.001, float beta1 = 0.9, float beta2 = 0.999, float epsilon = 1e-8);
     float ReLU(float val);

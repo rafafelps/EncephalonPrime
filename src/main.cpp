@@ -29,17 +29,18 @@ float accuracyFinder(int argc, char* argv[]) {
     unsigned int outputSize = 10;
     std::vector<unsigned int> sizes;
     sizes.push_back(inputSize);
-    sizes.push_back(16);
-    sizes.push_back(16);
+    sizes.push_back(10);
+    sizes.push_back(10);
     sizes.push_back(outputSize);
 
-    NeuralNetwork mnist(sizes);
+    NeuralNetwork mnist;
     mnist.setName("mnist");
 
     if (atoi(argv[1])) {
         mnist.setDataset(&testData);
         mnist.loadNetworkState();
     } else {
+        mnist.setStructure(sizes);
         mnist.setDataset(&trainingData);
         mnist.learn(1, false);
     }
