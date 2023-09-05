@@ -10,9 +10,9 @@ private:
     std::vector<Layer*> layers;
     std::string name;
 public:
-    NeuralNetwork();
     NeuralNetwork(std::vector<unsigned int> sizes);
     NeuralNetwork(NeuralNetwork* originalNet);
+    NeuralNetwork();
     ~NeuralNetwork();
 
     float* getResults() const;

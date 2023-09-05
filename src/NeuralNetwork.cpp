@@ -7,8 +7,6 @@
 #include <limits>
 #include "NeuralNetwork.hpp"
 
-NeuralNetwork::NeuralNetwork() {}
-
 NeuralNetwork::NeuralNetwork(std::vector<unsigned int> sizes) {
     setStructure(sizes);
 }
@@ -41,6 +39,7 @@ NeuralNetwork::NeuralNetwork(NeuralNetwork* originalNet) {
     }
 }
 
+NeuralNetwork::NeuralNetwork() {}
 
 NeuralNetwork::~NeuralNetwork() {
     unsigned char size = layers.size();
