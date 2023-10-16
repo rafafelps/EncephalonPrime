@@ -15,7 +15,7 @@
 Some features may not be available at the moment.
 
 ## Description
-Made with C++. EncephalonPrime is a library that helps to create variable-sized FCNN. There's multiple activation functions implemented (ReLU, Sigmoid, etc), a save/load system, Adam for better training, Kaiming initialization and much more!
+Made with C++. EncephalonPrime is a library that helps to create variable-sized FCNN. There's multiple activation functions implemented (ReLU, Sigmoid, etc), a save/load system, Adam for better training, Kaiming Initialization and much more!
 
 ## Author
 
